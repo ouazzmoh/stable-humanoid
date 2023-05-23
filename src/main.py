@@ -12,10 +12,10 @@ def p_u_matrix(t_step, h, g, n):
     p_u = np.zeros(shape=(n, n))
     for diagonal_index in range(n):
         # We loop over the lower diagonals to fill the toeplitz matrix
-        fill_value = (diagonal_index + 1) * (t_step**3)/6 - t_step * h /g
         if diagonal_index == 0:
-            np.fill_diagonal(p_u, fill_value)
+            np.fill_diagonal(p_u, (t_step**3)/6 - t_step * h /g)
         else:
+            fill_value = (1 + 3*diagonal_index + 3 * (diagonal_index**2)) * (t_step ** 3) / 6 - t_step * h / g
             np.fill_diagonal(p_u[diagonal_index:, :-diagonal_index], fill_value)
     return p_u
 
@@ -33,7 +33,7 @@ def p_x_matrix(t_step, h, g, n):
     for i in range(n):
         # The first column is already set to ones
         p_x[i][1] = (i+1) * t_step
-        p_x[i][2] = (i+1) * (t_step**2)/2 - h/g
+        p_x[i][2] = ((i+1)**2) * (t_step**2)/2 - h/g
     return p_x
 
 
@@ -53,7 +53,7 @@ def next_com(jerk, previous, t_step):
     a[-1, 0] = (t_step**2) / 2
     # first matrix of equation b
     b = np.array([(t_step**3)/6, (t_step**2)/2, t_step])
-    return a @ previous + b * jerk[0]
+    return a @ previous + b * jerk
 
 
 
@@ -62,7 +62,7 @@ def precompute_trajectory(t_step, h_com, g, n, xk_init, zk_ref):
     jerk_opt = optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref)
 
 
-def mid(arr): return abs(arr[1] - arr[0])/2
+def mid(arr): return (arr[0] + arr[1])/2
 
 
 def main():
@@ -79,13 +79,18 @@ def main():
     steps = 300
     zk_ref = np.zeros(steps)
     for i in range(steps):
-        zk_ref[i] = z_double_ref
+        if i % 2 == 0:
+            zk_ref[i] = z_left_ref
+        else:
+            zk_ref[i] = z_right_ref
     xk_init = np.zeros(3)
     jerk = optimal_jerk(t_step=5, h_com=0.8, g=9.81, n=steps, xk_init=xk_init, zk_ref=zk_ref, r_q=1e-6)
     prev = xk_init
     for i in range(30):
-        next = next_com(jerk=jerk, previous=prev, t_step=5)
-        print(next)
+        next = next_com(jerk=jerk[0], previous=prev, t_step=5)
+        print(next[0])
+        #TODO: Construct the proper z_k refs
+        #TODO: Check if the computations are correct
         prev = next
 
 
