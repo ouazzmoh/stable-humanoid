@@ -123,7 +123,7 @@ def simulation_no_feedback():
         com.append(next[0])
         com_velocity.append(next[1])
         com_acceleration.append(next[2])
-        cop.append(np.array([1, 0, -0.8/9.8]) @ next)
+        cop.append(np.array([1, 0, -h_com/g]) @ next)
         prev = next
 
     x = np.linspace(0, 9, steps)
@@ -153,7 +153,7 @@ def simulation_with_feedback():
         com.append(next[0])
         com_velocity.append(next[1])
         com_acceleration.append(next[2])
-        cop.append(np.array([1, 0, -0.8 / 9.8]) @ next)
+        cop.append(np.array([1, 0, -h_com / g]) @ next)
         prev = next
         # We fill the last values using the results of the last QP resolution
         if i == steps-window_steps - 1:
@@ -163,7 +163,7 @@ def simulation_with_feedback():
                 com.append(next[0])
                 com_velocity.append(next[1])
                 com_acceleration.append(next[2])
-                cop.append(np.array([1, 0, -0.8 / 9.8]) @ next)
+                cop.append(np.array([1, 0, -h_com / g]) @ next)
     return cop, com, com_velocity, com_acceleration, zk_ref
 
 
