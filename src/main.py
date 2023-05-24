@@ -40,7 +40,7 @@ def p_x_matrix(t_step, h, g, n):
 
 def optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref, r_q):
     """
-    Solve the QP problem
+    Solve the QP problem analytically
     :param t_step:
     :param h_com:
     :param g:
@@ -58,7 +58,8 @@ def optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref, r_q):
 
 def next_com(jerk, previous, t_step):
     """
-    Getting the next (position, velocity, acceleration) vector
+    Getting the next (position, velocity, acceleration) vector using the recursive
+    integration scheme
     :param jerk:
     :param previous:
     :param t_step:
@@ -80,6 +81,11 @@ def mid(arr): return (arr[0] + arr[1])/2
 
 
 def construct_zref(steps):
+    """
+    Construct the references for the center of pressure
+    :param steps: number of steps to sample the horizon
+    :return: array of z_ref
+    """
     # Constructing z_ref
     # the convex hull when the support is in the left
     z_left_single = np.array([-0.17, -0.04])
@@ -106,7 +112,7 @@ def simulation_no_feedback():
     r_q = 1e-6
     xk_init = (0, 0, 0)
     zk_ref = construct_zref(steps=steps)
-    jerk = optimal_jerk(t_step=5 * 1e-3, h_com=0.8, g=9.81, n=steps, xk_init=xk_init, zk_ref=zk_ref, r_q=r_q)
+    jerk = optimal_jerk(t_step=t_step, h_com=h_com, g=g, n=steps, xk_init=xk_init, zk_ref=zk_ref, r_q=r_q)
     com = []
     com_velocity = []
     com_acceleration = []
@@ -122,22 +128,59 @@ def simulation_no_feedback():
 
     x = np.linspace(0, 9, steps)
 
-    return cop, com, com_velocity, com_acceleration, zk_ref, x
+    return cop, com, com_velocity, com_acceleration, zk_ref, x, jerk
+
+
+def simulation_with_feedback():
+    t_step = 5e-3
+    # We simulate from 0 to 9 (s)
+    steps = int(9/t_step)
+    g = 9.81
+    h_com = 0.8
+    r_q = 1e-6
+    xk_init = (0, 0, 0)
+    zk_ref = construct_zref(steps=steps)
+    com = []
+    com_velocity = []
+    com_acceleration = []
+    cop = []
+    prev = xk_init
+    window_steps = 300
+    for i in range(steps - window_steps):
+        jerk = optimal_jerk(t_step=t_step, h_com=h_com, g=g, n=window_steps, xk_init=prev,
+                            zk_ref=zk_ref[i:window_steps + i], r_q=r_q)
+        next = next_com(jerk=jerk[0], previous=prev, t_step=t_step)
+        com.append(next[0])
+        com_velocity.append(next[1])
+        com_acceleration.append(next[2])
+        cop.append(np.array([1, 0, -0.8 / 9.8]) @ next)
+        prev = next
+        # We fill the last values using the results of the last QP resolution
+        if i == steps-window_steps - 1:
+            for k in range(steps-window_steps, steps):
+                next = next_com(jerk=jerk[int(k % window_steps)], previous=prev,
+                                t_step=t_step)
+                com.append(next[0])
+                com_velocity.append(next[1])
+                com_acceleration.append(next[2])
+                cop.append(np.array([1, 0, -0.8 / 9.8]) @ next)
+    return cop, com, com_velocity, com_acceleration, zk_ref
 
 
 
 
 def main():
-    cop, com, com_velocity, com_acceleration, zk_ref, x = simulation_no_feedback()
-
-    plt.plot(x, cop)
-    plt.plot(x, com)
-    plt.plot(x, zk_ref)
-    # plt.plot(x, com_velocity)
-    # plt.plot(x, com_acceleration)
-    plt.legend(['cop', 'com', 'z_ref'])
-    plt.title("Predicted trajectory when solving QP once (R/Q = 1e-6)")
+    cop, com, _, _, zk_ref = simulation_with_feedback()
+    # x is used to have the proper scale in the x-axis
+    x = np.linspace(0, 9, len(zk_ref))
+    plt.plot(x, zk_ref, linestyle="--", color="blue")
+    plt.plot(x, cop, color="green")
+    plt.plot(x, com, color="red")
+    plt.ylim(-0.20, 0.20)
+    plt.legend(['z_ref', 'cop', 'com'])
+    plt.title("ZMP predictive control (R/Q = 1e-6)")
     plt.show()
+
 
 
 
