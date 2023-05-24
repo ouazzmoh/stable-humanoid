@@ -57,6 +57,13 @@ def optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref, r_q):
 
 
 def next_com(jerk, previous, t_step):
+    """
+    Getting the next (position, velocity, acceleration) vector
+    :param jerk:
+    :param previous:
+    :param t_step:
+    :return:
+    """
     # previous :array of (position, velocity, acceleration)
     # first matrix of equation a
     a = np.zeros(shape=(3, 3))
@@ -99,35 +106,37 @@ def simulation_no_feedback():
     r_q = 1e-6
     xk_init = (0, 0, 0)
     zk_ref = construct_zref(steps=steps)
-    jerk = optimal_jerk(t_step=5 * 1e-3, h_com=0.8, g=9.81, n=steps, xk_init=xk_init, zk_ref=zk_ref, r_q=1e-6)
+    jerk = optimal_jerk(t_step=5 * 1e-3, h_com=0.8, g=9.81, n=steps, xk_init=xk_init, zk_ref=zk_ref, r_q=r_q)
     com = []
-    com_speed = []
+    com_velocity = []
     com_acceleration = []
     cop = []
     prev = xk_init
     for i in range(steps):
         next = next_com(jerk=jerk[i], previous=prev, t_step=t_step)
         com.append(next[0])
-        com_speed.append(next[1])
+        com_velocity.append(next[1])
         com_acceleration.append(next[2])
         cop.append(np.array([1, 0, -0.8/9.8]) @ next)
         prev = next
 
     x = np.linspace(0, 9, steps)
 
-    return cop, com, com_speed, com_acceleration, zk_ref, x
+    return cop, com, com_velocity, com_acceleration, zk_ref, x
 
 
 
 
 def main():
-    cop, com, com_speed, com_acceleration, zk_ref, x = simulation_no_feedback()
+    cop, com, com_velocity, com_acceleration, zk_ref, x = simulation_no_feedback()
 
     plt.plot(x, cop)
     plt.plot(x, com)
     plt.plot(x, zk_ref)
-    plt.plot(x, com_speed)
-    plt.legend(['cop', 'com', 'z_ref', 'com'])
+    # plt.plot(x, com_velocity)
+    # plt.plot(x, com_acceleration)
+    plt.legend(['cop', 'com', 'z_ref'])
+    plt.title("Predicted trajectory when solving QP once (R/Q = 1e-6)")
     plt.show()
 
 
