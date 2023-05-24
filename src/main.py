@@ -40,7 +40,7 @@ def p_x_matrix(t_step, h, g, n):
 
 def optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref, r_q):
     """
-    Cacl
+    Solve the QP problem
     :param t_step:
     :param h_com:
     :param g:
@@ -71,7 +71,8 @@ def next_com(jerk, previous, t_step):
 def mid(arr): return (arr[0] + arr[1])/2
 
 
-def main():
+
+def construct_zref(steps):
     # Constructing z_ref
     # the convex hull when the support is in the left
     z_left_single = np.array([-0.17, -0.04])
@@ -82,51 +83,51 @@ def main():
     # the convex hull when the support is double
     z_double = np.array([-0.17, 0.17])
     z_double_ref = mid(z_double)
-    steps = 300
-
-    begin = [z_double_ref] * int(steps*0.26)
-    left = [z_left_ref] * int(steps*0.07) + [z_double_ref] * int(steps*0.01)
-    right = [z_right_ref] * int(steps*0.07) + [z_double_ref] * int(steps*0.01)
+    # steps = 300
+    begin = [z_double_ref] * int(steps * 0.26)
+    left = [z_left_ref] * int(steps * 0.07) + [z_double_ref] * int(steps * 0.01)
+    right = [z_right_ref] * int(steps * 0.07) + [z_double_ref] * int(steps * 0.01)
     zk_ref = begin + (left + right) * 3
     zk_ref += [z_double_ref] * abs((steps - len(zk_ref)) % steps)
-    zk_ref = np.array(zk_ref)
+    return np.array(zk_ref)
 
-    x = np.linspace(0, 9, 300)
-
-    prev = np.zeros(3)
-    y_com = np.zeros(300)
-    acc_com = np.zeros(300)
-    y_cop = np.zeros(300)
-    jerk = optimal_jerk(t_step=5* 1e-3, h_com=0.8, g=9.81, n=steps, xk_init=prev, zk_ref=zk_ref, r_q=1e-6)
-
-    acc_proj = np.zeros(shape=(steps, steps))
-    for diagonal_index in range(steps):
-        # We loop over the lower diagonals to fill the toeplitz matrix
-        if diagonal_index == 0:
-            np.fill_diagonal(acc_proj, 5)
-        else:
-            np.fill_diagonal(acc_proj[diagonal_index:, :-diagonal_index], 5)
-
-
-    # plt.plot(x, acc_proj @ jerk)
-
-
-    for i in range(300):
-        next = next_com(jerk=jerk[i], previous=prev, t_step=5)
-        next_cop = np.array([1, 0, -0.8/9.8]) @ next
-        y_com[i] = next[0]
-        acc_com[i] = next[2]
-        y_cop[i] = next_cop
+def simulation_no_feedback():
+    steps = 300
+    g = 9.81
+    h_com = 0.8
+    t_step = 5e-3
+    r_q = 1e-6
+    xk_init = (0, 0, 0)
+    zk_ref = construct_zref(steps=steps)
+    jerk = optimal_jerk(t_step=5 * 1e-3, h_com=0.8, g=9.81, n=steps, xk_init=xk_init, zk_ref=zk_ref, r_q=1e-6)
+    com = []
+    com_speed = []
+    com_acceleration = []
+    cop = []
+    prev = xk_init
+    for i in range(steps):
+        next = next_com(jerk=jerk[i], previous=prev, t_step=t_step)
+        com.append(next[0])
+        com_speed.append(next[1])
+        com_acceleration.append(next[2])
+        cop.append(np.array([1, 0, -0.8/9.8]) @ next)
         prev = next
 
+    x = np.linspace(0, 9, steps)
 
-    # plt.plot(x, zk_ref)
-    # plt.plot(x, acc_com)
-    # plt.plot(x, y_com)
-    plt.plot(x, (0.8/9.8)*acc_com)
-    # plt.plot(x, y_cop)
-    # plt.ylim(bottom=-0.12, top=0.12)
-    # plt.legend(['jerk', 'zk_ref', 'y_com', 'y_cop'])
+    return cop, com, com_speed, com_acceleration, zk_ref, x
+
+
+
+
+def main():
+    cop, com, com_speed, com_acceleration, zk_ref, x = simulation_no_feedback()
+
+    plt.plot(x, cop)
+    plt.plot(x, com)
+    plt.plot(x, zk_ref)
+    plt.plot(x, com_speed)
+    plt.legend(['cop', 'com', 'z_ref', 'com'])
     plt.show()
 
 
