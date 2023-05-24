@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 def p_u_matrix(t_step, h, g, n):
@@ -38,6 +39,17 @@ def p_x_matrix(t_step, h, g, n):
 
 
 def optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref, r_q):
+    """
+    Cacl
+    :param t_step:
+    :param h_com:
+    :param g:
+    :param n:
+    :param xk_init:
+    :param zk_ref:
+    :param r_q:
+    :return:
+    """
     p_u = p_u_matrix(t_step, h_com, g, n)
     p_x = p_x_matrix(t_step, h_com, g, n)
     result = - np.linalg.inv(p_u.T @ p_u + r_q * np.eye(n)) @ p_u.T @ (p_x @ xk_init - zk_ref)
@@ -49,17 +61,11 @@ def next_com(jerk, previous, t_step):
     # first matrix of equation a
     a = np.zeros(shape=(3, 3))
     np.fill_diagonal(a, 1)
-    np.fill_diagonal(a[1:, :-1], t_step)
-    a[-1, 0] = (t_step**2) / 2
+    np.fill_diagonal(a[:(1+1), 1:], t_step)
+    a[0, -1] = (t_step**2) / 2
     # first matrix of equation b
     b = np.array([(t_step**3)/6, (t_step**2)/2, t_step])
     return a @ previous + b * jerk
-
-
-
-
-def precompute_trajectory(t_step, h_com, g, n, xk_init, zk_ref):
-    jerk_opt = optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref)
 
 
 def mid(arr): return (arr[0] + arr[1])/2
@@ -77,21 +83,51 @@ def main():
     z_double = np.array([-0.17, 0.17])
     z_double_ref = mid(z_double)
     steps = 300
-    zk_ref = np.zeros(steps)
-    for i in range(steps):
-        if i % 2 == 0:
-            zk_ref[i] = z_left_ref
+
+    begin = [z_double_ref] * int(steps*0.26)
+    left = [z_left_ref] * int(steps*0.07) + [z_double_ref] * int(steps*0.01)
+    right = [z_right_ref] * int(steps*0.07) + [z_double_ref] * int(steps*0.01)
+    zk_ref = begin + (left + right) * 3
+    zk_ref += [z_double_ref] * abs((steps - len(zk_ref)) % steps)
+    zk_ref = np.array(zk_ref)
+
+    x = np.linspace(0, 9, 300)
+
+    prev = np.zeros(3)
+    y_com = np.zeros(300)
+    acc_com = np.zeros(300)
+    y_cop = np.zeros(300)
+    jerk = optimal_jerk(t_step=5* 1e-3, h_com=0.8, g=9.81, n=steps, xk_init=prev, zk_ref=zk_ref, r_q=1e-6)
+
+    acc_proj = np.zeros(shape=(steps, steps))
+    for diagonal_index in range(steps):
+        # We loop over the lower diagonals to fill the toeplitz matrix
+        if diagonal_index == 0:
+            np.fill_diagonal(acc_proj, 5)
         else:
-            zk_ref[i] = z_right_ref
-    xk_init = np.zeros(3)
-    jerk = optimal_jerk(t_step=5, h_com=0.8, g=9.81, n=steps, xk_init=xk_init, zk_ref=zk_ref, r_q=1e-6)
-    prev = xk_init
-    for i in range(30):
-        next = next_com(jerk=jerk[0], previous=prev, t_step=5)
-        print(next[0])
-        #TODO: Construct the proper z_k refs
-        #TODO: Check if the computations are correct
+            np.fill_diagonal(acc_proj[diagonal_index:, :-diagonal_index], 5)
+
+
+    # plt.plot(x, acc_proj @ jerk)
+
+
+    for i in range(300):
+        next = next_com(jerk=jerk[i], previous=prev, t_step=5)
+        next_cop = np.array([1, 0, -0.8/9.8]) @ next
+        y_com[i] = next[0]
+        acc_com[i] = next[2]
+        y_cop[i] = next_cop
         prev = next
+
+
+    # plt.plot(x, zk_ref)
+    # plt.plot(x, acc_com)
+    # plt.plot(x, y_com)
+    plt.plot(x, (0.8/9.8)*acc_com)
+    # plt.plot(x, y_cop)
+    # plt.ylim(bottom=-0.12, top=0.12)
+    # plt.legend(['jerk', 'zk_ref', 'y_com', 'y_cop'])
+    plt.show()
 
 
 
