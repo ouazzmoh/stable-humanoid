@@ -10,15 +10,15 @@ def p_u_matrix(t_step, h, g, n):
         :param g: norm of gravity
         :param n: number of steps in the QP problem
     """
-    p_u = np.zeros(shape=(n, n))
+    Pu = np.zeros(shape=(n, n))
     for diagonal_index in range(n):
         # We loop over the lower diagonals to fill the toeplitz matrix
         if diagonal_index == 0:
-            np.fill_diagonal(p_u, (t_step**3)/6 - t_step * h /g)
+            np.fill_diagonal(Pu, (t_step**3)/6 - t_step * h /g)
         else:
             fill_value = (1 + 3*diagonal_index + 3 * (diagonal_index**2)) * (t_step ** 3) / 6 - t_step * h / g
-            np.fill_diagonal(p_u[diagonal_index:, :-diagonal_index], fill_value)
-    return p_u
+            np.fill_diagonal(Pu[diagonal_index:, :-diagonal_index], fill_value)
+    return Pu
 
 
 def p_x_matrix(t_step, h, g, n):
@@ -30,12 +30,12 @@ def p_x_matrix(t_step, h, g, n):
             :param n: number of steps in the QP problem
     """
 
-    p_x = np.ones(shape=(n, 3))
+    Px = np.ones(shape=(n, 3))
     for i in range(n):
         # The first column is already set to ones
-        p_x[i][1] = (i+1) * t_step
-        p_x[i][2] = ((i+1)**2) * (t_step**2)/2 - h/g
-    return p_x
+        Px[i][1] = (i+1) * t_step
+        Px[i][2] = ((i+1)**2) * (t_step**2)/2 - h/g
+    return Px
 
 
 def optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref, r_q):
@@ -50,9 +50,10 @@ def optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref, r_q):
     :param r_q:
     :return:
     """
-    p_u = p_u_matrix(t_step, h_com, g, n)
-    p_x = p_x_matrix(t_step, h_com, g, n)
-    result = - np.linalg.inv(p_u.T @ p_u + r_q * np.eye(n)) @ p_u.T @ (p_x @ xk_init - zk_ref)
+    Pu = p_u_matrix(t_step, h_com, g, n)
+    Px = p_x_matrix(t_step, h_com, g, n)
+    # result = - np.linalg.inv(p_u.T @ p_u + r_q * np.eye(n)) @ p_u.T @ (p_x @ xk_init - zk_ref)
+    result = np.linalg.solve(Pu.T @ Pu + r_q * np.eye(n),  -Pu.T @ (Px @ xk_init - zk_ref))
     return result
 
 
@@ -67,13 +68,13 @@ def next_com(jerk, previous, t_step):
     """
     # previous :array of (position, velocity, acceleration)
     # first matrix of equation a
-    a = np.zeros(shape=(3, 3))
-    np.fill_diagonal(a, 1)
-    np.fill_diagonal(a[:(1+1), 1:], t_step)
-    a[0, -1] = (t_step**2) / 2
+    A = np.zeros(shape=(3, 3))
+    np.fill_diagonal(A, 1)
+    np.fill_diagonal(A[:(1+1), 1:], t_step)
+    A[0, -1] = (t_step**2) / 2
     # first matrix of equation b
-    b = np.array([(t_step**3)/6, (t_step**2)/2, t_step])
-    return a @ previous + b * jerk
+    B = np.array([(t_step**3)/6, (t_step**2)/2, t_step])
+    return A @ previous + B * jerk
 
 
 def mid(arr): return (arr[0] + arr[1])/2
@@ -155,25 +156,17 @@ def simulation_with_feedback():
         com_acceleration.append(next[2])
         cop.append(np.array([1, 0, -h_com / g]) @ next)
         prev = next
-        # We fill the last values using the results of the last QP resolution
-        if i == steps-window_steps - 1:
-            for k in range(steps-window_steps, steps):
-                next = next_com(jerk=jerk[int(k % window_steps)], previous=prev,
-                                t_step=t_step)
-                com.append(next[0])
-                com_velocity.append(next[1])
-                com_acceleration.append(next[2])
-                cop.append(np.array([1, 0, -h_com / g]) @ next)
-    return cop, com, com_velocity, com_acceleration, zk_ref
+    x = np.arange(0, 9, t_step)
+    return cop, com, com_velocity, com_acceleration, zk_ref, x
 
 
 
 
 def main():
-    cop, com, _, _, zk_ref = simulation_with_feedback()
-    # x is used to have the proper scale in the x-axis
-    x = np.linspace(0, 9, len(zk_ref))
-    plt.plot(x, zk_ref, linestyle="--", color="blue")
+    cop, com, _, _, zk_ref, x = simulation_with_feedback()
+    # x is used to show the proper scale in the x-axis
+    x = x[:len(cop)]
+    plt.plot(x, zk_ref[:len(cop)], linestyle="--", color="blue")
     plt.plot(x, cop, color="green")
     plt.plot(x, com, color="red")
     plt.ylim(-0.20, 0.20)
