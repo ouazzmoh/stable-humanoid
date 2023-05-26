@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import cvxpy as cp
 from qpsolvers import solve_qp
+import quadprog
 import scipy.sparse as sp
 
 
@@ -70,7 +71,7 @@ def optimal_jerk_qp(t_step, h_com, g, n, xk_init, zk_min, zk_max, r_q, Pu, Px):
     epsilon = 1e-3 * np.ones(n)  # using epsilon in the constraints to make the inequality strict
     h = np.hstack((zk_max - Px @ xk_init - epsilon, -(zk_min - Px @ xk_init) - epsilon))  # same here for h
     # Solving the QP problem
-    x = solve_qp(Q, p, G, h, solver="osqp")
+    x = solve_qp(Q, p, G, h, solver="quadprog")
     return x
 
 
@@ -305,13 +306,14 @@ def simulation_with_perturbations():
 
 
 def main():
-    cop, com, _, _, zk_min, zk_max, x = simulation_with_perturbations()
+    cop, com, _, _, zk_min, zk_max, x = simulation_qp_perturbations()
     # x is used to show the proper scale in the x-axis
     x = x[:len(cop)]
-    plt.plot(x, zk_min[:len(cop)], linestyle="--", linewidth=0.5, color="gray")
-    plt.plot(x, zk_max[:len(cop)], linestyle="--", linewidth=0.5, color="gray")
-    plt.plot(x, cop, color="green", label="cop")
-    plt.plot(x, com, color="red", label="com")
+    plt.plot(x, zk_min[:len(cop)], linestyle="--", linewidth=0.2, color="gray")
+    plt.plot(x, zk_max[:len(cop)], linestyle="--", linewidth=0.2, color="gray")
+    plt.plot(x, cop, color="green", label="cop", linewidth=0.7)
+    # plt.scatter(x, cop, s=0.5)
+    plt.plot(x, com, color="red", label="com", linewidth=1)
     # for i in range(len(possible_trajectories)):
     #     if i == 500:
     #         possible = possible_trajectories[i]
@@ -319,7 +321,7 @@ def main():
     #         plt.plot(x, np.array(possible[:len(x)]), linewidth=1, color="orange")
     plt.ylim(-0.15, 0.15)
     plt.legend(loc='upper right')
-    plt.title("Analytical resolution with perturbation of 2 m.s-2")
+    plt.title("QP resolution with perturbation of 2 m.s-2")
     plt.show()
 
 
