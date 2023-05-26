@@ -193,7 +193,7 @@ def simulation_with_feedback():
 
 
 
-def simulation_with_feedback_qp():
+def simulation_qp():
     t_step = 5e-3
     # We simulate from 0 to 9 (s)
     steps = int(9/t_step)
@@ -226,7 +226,7 @@ def simulation_with_feedback_qp():
     return cop, com, com_velocity, com_acceleration, zk_min, zk_max, x
 
 
-def simulation_with_feedback_qp_perturbations():
+def simulation_qp_perturbations():
     t_step = 5e-3
     # We simulate from 0 to 9 (s)
     steps = int(9/t_step)
@@ -257,7 +257,7 @@ def simulation_with_feedback_qp_perturbations():
         # perturbation after (2.5 seconds)
         if i == 500:
             # 2.5 seconds we add an impact, it changes the acceleration
-            next[2] -= 10
+            next[2] += 2
         prev = next
     x = np.arange(0, 9, t_step)
     return cop, com, com_velocity, com_acceleration, zk_min, zk_max, x
@@ -284,11 +284,12 @@ def simulation_with_perturbations():
         com.append(next[0])
         com_velocity.append(next[1])
         com_acceleration.append(next[2])
+        copInter = np.array([1, 0, -h_com / g]) @ next
         cop.append(np.array([1, 0, -h_com / g]) @ next)
         # perturbation after (2.5 seconds)
         if i == 500:
             # 2.5 seconds we add an impact, it changes the acceleration
-            next[2] -= 10
+            next[2] += 0.5
         prev = next
     x = np.arange(0, 9, t_step)
     return cop, com, com_velocity, com_acceleration, zk_ref, x
@@ -296,7 +297,7 @@ def simulation_with_perturbations():
 
 
 def main():
-    cop, com, _, _, zk_min, zk_max, x = simulation_with_feedback_qp_perturbations()
+    cop, com, _, _, zk_min, zk_max, x = simulation_qp_perturbations()
     # x is used to show the proper scale in the x-axis
     x = x[:len(cop)]
     plt.plot(x, zk_min[:len(cop)], linestyle="--", color="blue")

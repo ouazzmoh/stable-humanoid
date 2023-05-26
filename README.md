@@ -20,5 +20,6 @@
 ## Adding perturbations to the qp resolution method
 
 We use a OSQP solver from the python library qpsolvers
+Impact of force 0.5 m.s-2
 
 ![Example Image](plots/qp_perturbations.png)
