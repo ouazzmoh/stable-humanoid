@@ -13,11 +13,11 @@
 
 ![Example Image](plots/instant_perturbation.png)
 
-## Considering the limits explicitely 
+## Considering the limits explicitly 
 
 ![Example Image](plots/qp.png)
 
-## Adding perturbations to the qp resoltion method
+## Adding perturbations to the qp resolution method
 
 We use a OSQP solver from the python library qpsolvers
 
