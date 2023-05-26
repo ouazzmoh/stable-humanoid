@@ -179,6 +179,7 @@ def simulation_with_feedback():
     cop = []
     prev = xk_init
     window_steps = 300
+    possible_trajectories = []
     for i in range(steps - window_steps):
         jerk = optimal_jerk(t_step=t_step, h_com=h_com, g=g, n=window_steps, xk_init=prev,
                             zk_ref=zk_ref[i:window_steps + i], r_q=r_q)
@@ -188,8 +189,14 @@ def simulation_with_feedback():
         com_acceleration.append(next[2])
         cop.append(np.array([1, 0, -h_com / g]) @ next)
         prev = next
+        #Possible trajectory
+        possible_com_trajectory = [next[0]]
+        for k in range(1, window_steps):
+            next_k = next_com(jerk=jerk[k], previous=prev, t_step=t_step)
+            possible_com_trajectory.append(next_k[0])
+        possible_trajectories.append(possible_com_trajectory)
     x = np.arange(0, 9, t_step)
-    return cop, com, com_velocity, com_acceleration, zk_ref, x
+    return cop, com, com_velocity, com_acceleration, zk_ref, x, possible_trajectories
 
 
 
@@ -270,7 +277,8 @@ def simulation_with_perturbations():
     h_com = 0.8
     r_q = 1e-6
     xk_init = (0, 0, 0)
-    zk_ref = construct_zref(steps=steps)
+    zk_min, zk_max = construct_zmin_zmax(steps=steps)
+    zk_ref = (zk_min + zk_max)/2
     com = []
     com_velocity = []
     com_acceleration = []
@@ -289,31 +297,36 @@ def simulation_with_perturbations():
         # perturbation after (2.5 seconds)
         if i == 500:
             # 2.5 seconds we add an impact, it changes the acceleration
-            next[2] += 0.5
+            next[2] += 2
         prev = next
     x = np.arange(0, 9, t_step)
-    return cop, com, com_velocity, com_acceleration, zk_ref, x
+    return cop, com, com_velocity, com_acceleration, zk_min, zk_max, x
 
 
 
 def main():
-    cop, com, _, _, zk_min, zk_max, x = simulation_qp_perturbations()
+    cop, com, _, _, zk_min, zk_max, x = simulation_with_perturbations()
     # x is used to show the proper scale in the x-axis
     x = x[:len(cop)]
-    plt.plot(x, zk_min[:len(cop)], linestyle="--", color="blue")
-    plt.plot(x, zk_max[:len(cop)], linestyle="--", color="blue")
+    plt.plot(x, zk_min[:len(cop)], linestyle="--", linewidth=0.5, color="gray")
+    plt.plot(x, zk_max[:len(cop)], linestyle="--", linewidth=0.5, color="gray")
     plt.plot(x, cop, color="green", label="cop")
     plt.plot(x, com, color="red", label="com")
+    # for i in range(len(possible_trajectories)):
+    #     if i == 500:
+    #         possible = possible_trajectories[i]
+    #         possible = [0.0] * i + possible + [0.0] * (len(x) - len(possible) - i)
+    #         plt.plot(x, np.array(possible[:len(x)]), linewidth=1, color="orange")
     plt.ylim(-0.15, 0.15)
-    plt.legend()
-    plt.title("QP resolution")
+    plt.legend(loc='upper right')
+    plt.title("Analytical resolution with perturbation of 2 m.s-2")
     plt.show()
 
 
 
 
 
-if __name__ == "__main__":
+if __name__=="__main__":
     main()
 
 

@@ -1,25 +1,27 @@
 # Stable Humanoid
 
 
-## Simulation with no perturbations
+## Analytical resolution
 
 ![Example Image](plots/predictive_control.png)
 
-## Continuous perturbation of 1 m.s-2 (5 steps of time)
+## QP Resolution
 
-![Example Image](plots/perturbations.png)
-
-## Instant perturbation of 6 m.s-2
-
-![Example Image](plots/instant_perturbation.png)
-
-## Considering the limits explicitly 
+Using the OSQP solver from the library `qpsolvers`
 
 ![Example Image](plots/qp.png)
 
-## Adding perturbations to the qp resolution method
+## Analytical resolution with perturbations
 
-We use a OSQP solver from the python library qpsolvers
-Impact of force 0.5 m.s-2
+perturbation of `2 m.s-2` at `2.5s`
+
+![Example Image](plots/perturbations.png)
+
+## QP Resolution with perturbations
+
+perturbation of `2 m.s-2` at `2.5s`
+Contrary to the analytical method, the robot stays stable
 
 ![Example Image](plots/qp_perturbations.png)
+
+
