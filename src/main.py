@@ -62,27 +62,7 @@ def main():
     plt.legend(loc="upper right")
     plt.show()
 
-    # x is used to show the proper scale in the x-axis
-    # x = x[:len(cop)]
-    # plt.plot(x, zk_min[:len(cop)], linestyle="--", linewidth=0.2, color="gray")
-    # plt.plot(x, zk_max[:len(cop)], linestyle="--", linewidth=0.2, color="gray")
-    # plt.plot(x, cop, color="green", label="cop", linewidth=0.7)
-    # # plt.scatter(x, cop, s=0.5)
-    # plt.plot(x, com, color="red", label="com", linewidth=1)
-    # # for i in range(len(possible_trajectories)):
-    # #     if i == 500:
-    # #         possible = possible_trajectories[i]
-    # #         possible = [0.0] * i + possible + [0.0] * (len(x) - len(possible) - i)
-    # #         plt.plot(x, np.array(possible[:len(x)]), linewidth=1, color="orange")
-    # plt.ylim(-0.15, 0.15)
-    # plt.legend(loc='upper right')
-    # plt.title("QP resolution with perturbation of 2 m.s-2")
-    # plt.show()
 
-    # plt.plot(zk_min[:len(cop)], x, linestyle="--", linewidth=0.5, color="red")
-    # plt.plot(zk_max[:len(cop)], x, linestyle="--", linewidth=0.5, color="red")
-    # plt.plot(cop, x, color="green")
-    # plt.show()
 
 
 if __name__ == "__main__":

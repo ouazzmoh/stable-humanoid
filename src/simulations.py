@@ -133,3 +133,34 @@ def simulation_with_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_pe
         prev = next
     x = np.arange(0, 9, t_step)
     return cop, com, com_velocity, com_acceleration, zk_min, zk_max, x
+
+
+
+def simulation_possible_trajectories(t_step, steps, g, h_com, r_q, xk_init):
+    zk_min, zk_max = construct_zmin_zmax(steps=steps)
+    zk_ref = (zk_min + zk_max)/2
+    com = []
+    com_velocity = []
+    com_acceleration = []
+    cop = []
+    prev = xk_init
+    window_steps = 300
+    possible_trajectories = []
+    for i in range(steps - window_steps):
+        jerk = optimal_jerk(t_step=t_step, h_com=h_com, g=g, n=window_steps, xk_init=prev,
+                            zk_ref=zk_ref[i:window_steps + i], r_q=r_q)
+        next = next_com(jerk=jerk[0], previous=prev, t_step=t_step)
+        com.append(next[0])
+        com_velocity.append(next[1])
+        com_acceleration.append(next[2])
+        cop.append(np.array([1, 0, -h_com / g]) @ next)
+        prev = next
+        #Possible trajectory
+        possible_com_trajectory = [next[0]]
+        if i == 0:
+            for k in range(1, window_steps):
+                next_k = next_com(jerk=jerk[k], previous=prev, t_step=t_step)
+                possible_com_trajectory.append(next_k[0])
+            possible_trajectories.append(possible_com_trajectory)
+    x = np.arange(0, 9, t_step)
+    return cop, com, com_velocity, com_acceleration, zk_min, zk_max, x, possible_trajectories

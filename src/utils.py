@@ -114,14 +114,14 @@ def construct_zmin_zmax(steps):
     # steps = 300
     begin_min = [z_double[0]] * int(steps * 0.26)
     begin_max = [z_double[1]] * int(steps * 0.26)
-    left_min = [z_left_single[0]] * int(steps * 0.07) + [z_double[0]] * int(steps * 0.01)
-    left_max = [z_left_single[1]] * int(steps * 0.07) + [z_double[1]] * int(steps * 0.01)
-    right_min = [z_right_single[0]] * int(steps * 0.07) + [z_double[0]] * int(steps * 0.01)
-    right_max = [z_right_single[1]] * int(steps * 0.07) + [z_double[1]] * int(steps * 0.01)
+    left_min = [z_left_single[0]] * int(steps * 0.07) + [z_double[0]] * int(steps * 0.018)
+    left_max = [z_left_single[1]] * int(steps * 0.07) + [z_double[1]] * int(steps * 0.018)
+    right_min = [z_right_single[0]] * int(steps * 0.07) + [z_double[0]] * int(steps * 0.02)
+    right_max = [z_right_single[1]] * int(steps * 0.07) + [z_double[1]] * int(steps * 0.02)
     zk_min = begin_min + (left_min + right_min) * 3
-    zk_min += [z_double[0]] * abs((steps - len(zk_min)) % steps)
+    zk_min += [z_double[0]] * abs((steps - len(zk_min)))
     zk_max = begin_max + (left_max + right_max) * 3
-    zk_max += [z_double[1]] * abs((steps - len(zk_max)) % steps)
+    zk_max += [z_double[1]] * abs((steps - len(zk_max)))
     return np.array(zk_min), np.array(zk_max)
 
 
