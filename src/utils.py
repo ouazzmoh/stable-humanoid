@@ -95,29 +95,33 @@ def mid(arr): return (arr[0] + arr[1])/2
 
 
 
-def construct_zmin_zmax(steps):
+
+def construct_zmin_zmax(steps, duration_double_init, duration_left, duration_right, duration_transition,
+                        min_val_left, max_val_left, min_val_right, max_val_right):
     """
         Construct the minimum and maximum for the center of pressure
-        :param steps: number of steps to sample the horizon
-        :return: array of z_ref
+        The duration of the support is expressed as percentage of steps
+        The values of the double support are in [min_val_left, max_val_right]
+        :param steps: number of steps of the whole simulation
+        :return: two arrays z_min and z_max
         """
     # Constructing z_ref
     # the convex hull when the support is in the left
-    z_left_single = np.array([-0.13, -0.07])
+    z_left_single = np.array([min_val_left, max_val_left])
     # z_left_ref = mid(z_left_single)
     # the convex hull when the support is in the right
-    z_right_single = np.array([0.07, 0.13])
+    z_right_single = np.array([min_val_right, max_val_right])
     # z_right_ref = mid(z_right_single)
     # the convex hull when the support is double
-    z_double = np.array([-0.13, 0.13])
+    z_double = np.array([min_val_left, max_val_right])
     # z_double_ref = mid(z_double)
     # steps = 300
-    begin_min = [z_double[0]] * int(steps * 0.26)
-    begin_max = [z_double[1]] * int(steps * 0.26)
-    left_min = [z_left_single[0]] * int(steps * 0.07) + [z_double[0]] * int(steps * 0.018)
-    left_max = [z_left_single[1]] * int(steps * 0.07) + [z_double[1]] * int(steps * 0.018)
-    right_min = [z_right_single[0]] * int(steps * 0.07) + [z_double[0]] * int(steps * 0.02)
-    right_max = [z_right_single[1]] * int(steps * 0.07) + [z_double[1]] * int(steps * 0.02)
+    begin_min = [z_double[0]] * int(steps * duration_double_init)
+    begin_max = [z_double[1]] * int(steps * duration_double_init)
+    left_min = [z_left_single[0]] * int(steps * duration_left) + [z_double[0]] * int(steps * duration_transition)
+    left_max = [z_left_single[1]] * int(steps * duration_left) + [z_double[1]] * int(steps * duration_transition)
+    right_min = [z_right_single[0]] * int(steps * duration_right) + [z_double[0]] * int(steps * duration_transition)
+    right_max = [z_right_single[1]] * int(steps * duration_right) + [z_double[1]] * int(steps * duration_transition)
     zk_min = begin_min + (left_min + right_min) * 3
     zk_min += [z_double[0]] * abs((steps - len(zk_min)))
     zk_max = begin_max + (left_max + right_max) * 3

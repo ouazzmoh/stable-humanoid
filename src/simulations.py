@@ -1,29 +1,32 @@
 from utils import *
 
-
-def simulation_no_feedback(steps, g, h_com, t_step, r_q, xk_init):
-    zk_ref = construct_zref(steps=steps)
-    jerk = optimal_jerk(t_step=t_step, h_com=h_com, g=g, n=steps, xk_init=xk_init, zk_ref=zk_ref, r_q=r_q)
-    com = []
-    com_velocity = []
-    com_acceleration = []
-    cop = []
-    prev = xk_init
-    for i in range(steps):
-        next = next_com(jerk=jerk[i], previous=prev, t_step=t_step)
-        com.append(next[0])
-        com_velocity.append(next[1])
-        com_acceleration.append(next[2])
-        cop.append(np.array([1, 0, -h_com/g]) @ next)
-        prev = next
-
-    x = np.linspace(0, 9, steps)
-
-    return cop, com, com_velocity, com_acceleration, zk_ref, x, jerk
+#
+# def simulation_no_feedback(steps, g, h_com, t_step, r_q, xk_init):
+#     zk_ref = construct_zref(steps=steps)
+#     jerk = optimal_jerk(t_step=t_step, h_com=h_com, g=g, n=steps, xk_init=xk_init, zk_ref=zk_ref, r_q=r_q)
+#     com = []
+#     com_velocity = []
+#     com_acceleration = []
+#     cop = []
+#     prev = xk_init
+#     for i in range(steps):
+#         next = next_com(jerk=jerk[i], previous=prev, t_step=t_step)
+#         com.append(next[0])
+#         com_velocity.append(next[1])
+#         com_acceleration.append(next[2])
+#         cop.append(np.array([1, 0, -h_com/g]) @ next)
+#         prev = next
+#
+#     x = np.linspace(0, 9, steps)
+#
+#     return cop, com, com_velocity, com_acceleration, zk_ref, x, jerk
 
 
 def simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init):
-    zk_min, zk_max = construct_zmin_zmax(steps=steps)
+    zk_min, zk_max = construct_zmin_zmax(steps=steps,duration_double_init=0.26, duration_left=0.07,
+                                         duration_right=0.07, duration_transition=0.018,
+                                         min_val_left=-0.13, max_val_left=-0.07,
+                                         min_val_right=0.07, max_val_right=0.13)
     zk_ref = (zk_min + zk_max)/2
     com = []
     com_velocity = []
@@ -53,7 +56,10 @@ def simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init):
 
 
 def simulation_qp(t_step, steps, g, h_com, r_q, xk_init):
-    zk_min, zk_max = construct_zmin_zmax(steps=steps)
+    zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
+                                         duration_right=0.07, duration_transition=0.018,
+                                         min_val_left=-0.13, max_val_left=-0.07,
+                                         min_val_right=0.07, max_val_right=0.13)
     com = []
     com_velocity = []
     com_acceleration = []
@@ -79,7 +85,10 @@ def simulation_qp(t_step, steps, g, h_com, r_q, xk_init):
 
 
 def simulation_qp_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_perturbation, acc_perturbation):
-    zk_min, zk_max = construct_zmin_zmax(steps=steps)
+    zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
+                                         duration_right=0.07, duration_transition=0.018,
+                                         min_val_left=-0.13, max_val_left=-0.07,
+                                         min_val_right=0.07, max_val_right=0.13)
     com = []
     com_velocity = []
     com_acceleration = []
@@ -109,7 +118,10 @@ def simulation_qp_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_pert
 
 
 def simulation_with_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_perturbation, acc_perturbation):
-    zk_min, zk_max = construct_zmin_zmax(steps=steps)
+    zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
+                                         duration_right=0.07, duration_transition=0.018,
+                                         min_val_left=-0.13, max_val_left=-0.07,
+                                         min_val_right=0.07, max_val_right=0.13)
     zk_ref = (zk_min + zk_max)/2
     com = []
     com_velocity = []
@@ -137,7 +149,10 @@ def simulation_with_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_pe
 
 
 def simulation_possible_trajectories(t_step, steps, g, h_com, r_q, xk_init):
-    zk_min, zk_max = construct_zmin_zmax(steps=steps)
+    zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
+                                         duration_right=0.07, duration_transition=0.018,
+                                         min_val_left=-0.13, max_val_left=-0.07,
+                                         min_val_right=0.07, max_val_right=0.13)
     zk_ref = (zk_min + zk_max)/2
     com = []
     com_velocity = []
