@@ -37,7 +37,8 @@ def main():
     plt.show()
 
     # QP resolution
-    cop2, com2, _, _, zk_min2, zk_max2, x2 = simulation_qp(t_step, steps, g, h_com, r_q, xk_init)
+    support_values = [-0.13, -0.07, 0.07, 0.13]
+    cop2, com2, _, _, zk_min2, zk_max2, x2 = simulation_qp(t_step, steps, g, h_com, xk_init, support_values)
     x2 = x2[:len(cop2)]
     plt.plot(x2, zk_min2[:len(cop2)], linestyle="--", linewidth=0.2, color="gray")
     plt.plot(x2, zk_max2[:len(cop2)], linestyle="--", linewidth=0.2, color="gray")

@@ -55,11 +55,20 @@ def simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init):
 
 
 
-def simulation_qp(t_step, steps, g, h_com, r_q, xk_init):
+def simulation_qp(t_step, steps, g, h_com, xk_init, support_values):
+    '''
+    :param t_step:
+    :param steps:
+    :param g:
+    :param h_com:
+    :param xk_init:
+    :param support_values:[min_val_left, max_val_left, min_val_right, max_val_right]
+    :return:
+    '''
     zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
                                          duration_right=0.07, duration_transition=0.018,
-                                         min_val_left=-0.13, max_val_left=-0.07,
-                                         min_val_right=0.07, max_val_right=0.13)
+                                         min_val_left=support_values[0], max_val_left=support_values[1],
+                                         min_val_right=support_values[2], max_val_right=support_values[3])
     com = []
     com_velocity = []
     com_acceleration = []
@@ -179,3 +188,43 @@ def simulation_possible_trajectories(t_step, steps, g, h_com, r_q, xk_init):
             possible_trajectories.append(possible_com_trajectory)
     x = np.arange(0, 9, t_step)
     return cop, com, com_velocity, com_acceleration, zk_min, zk_max, x, possible_trajectories
+
+
+def simulation_x_y(t_step, steps, g, h_com, xk_init, yk_init):
+    zk_x_min, zk_x_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
+                                         duration_right=0.07, duration_transition=0.018,
+                                         min_val_left=-0.13, max_val_left=-0.07,
+                                         min_val_right=0.07, max_val_right=0.13)
+    zk_y_min, zk_y_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
+                                             duration_right=0.07, duration_transition=0.018,
+                                             min_val_left=-0.3, max_val_left=0.3,
+                                             min_val_right=-0.3, max_val_right=0.3)
+    com_x = []
+    com_velocity_x = []
+    com_acceleration_x = []
+    cop_x = []
+    prev_x = xk_init
+
+    com_y = []
+    com_velocity_y = []
+    com_acceleration_y = []
+    cop_y = []
+    prev_y = xk_init
+
+    window_steps = 300
+
+    # Construction of reused matrices for performance
+    Pu = p_u_matrix(t_step, h_com, g, window_steps)
+    Px = p_x_matrix(t_step, h_com, g, window_steps)
+    for i in range(steps - window_steps):
+        jerk_x = optimal_jerk_qp(n=window_steps, xk_init=prev_x,
+                               zk_min=zk_x_min[i:window_steps + i], zk_max=zk_x_max[i:window_steps + i],
+                               Pu=Pu, Px=Px)
+        next_x = next_com(jerk=jerk_x[0], previous=prev_x, t_step=t_step)
+        com_x.append(next_x[0])
+        com_velocity_x.append(next_x[1])
+        com_acceleration_x.append(next_x[2])
+        cop_x.append(np.array([1, 0, -h_com / g]) @ next_x)
+        prev_x = next_x
+    x = np.arange(0, 9, t_step)
+    return cop, com, com_velocity, com_acceleration, zk_x_min, zk_x_max, x
