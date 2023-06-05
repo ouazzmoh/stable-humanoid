@@ -27,15 +27,18 @@ def simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init):
                                          duration_right=0.07, duration_transition=0.018,
                                          min_val_left=-0.13, max_val_left=-0.07,
                                          min_val_right=0.07, max_val_right=0.13)
+
+    window_steps = 300
+    zk_min = np.array(list(zk_min) + [zk_min[-1]]*window_steps)
+    zk_max = np.array(list(zk_max) + [zk_max[-1]]*window_steps)
     zk_ref = (zk_min + zk_max)/2
     com = []
     com_velocity = []
     com_acceleration = []
     cop = []
     prev = xk_init
-    window_steps = 300
     possible_trajectories = []
-    for i in range(steps - window_steps):
+    for i in range(steps):
         jerk = optimal_jerk(t_step=t_step, h_com=h_com, g=g, n=window_steps, xk_init=prev,
                             zk_ref=zk_ref[i:window_steps + i], r_q=r_q)
         next = next_com(jerk=jerk[0], previous=prev, t_step=t_step)
@@ -76,10 +79,13 @@ def simulation_qp(t_step, steps, g, h_com, xk_init, support_values):
     prev = xk_init
     window_steps = 300
 
+    zk_min = np.array(list(zk_min) + [zk_min[-1]] * window_steps)
+    zk_max = np.array(list(zk_max) + [zk_max[-1]] * window_steps)
+
     # Construction of reused matrices for performance
     Pu = p_u_matrix(t_step, h_com, g, window_steps)
     Px = p_x_matrix(t_step, h_com, g, window_steps)
-    for i in range(steps - window_steps):
+    for i in range(steps):
         jerk = optimal_jerk_qp(n=window_steps, xk_init=prev,
                                zk_min=zk_min[i:window_steps + i], zk_max=zk_max[i:window_steps + i],
                                Pu=Pu, Px=Px)
@@ -95,7 +101,7 @@ def simulation_qp(t_step, steps, g, h_com, xk_init, support_values):
 
 def simulation_qp_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_perturbation, acc_perturbation):
     zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
-                                         duration_right=0.07, duration_transition=0.018,
+                                         duration_right=0.07, duration_transition=0.02,
                                          min_val_left=-0.13, max_val_left=-0.07,
                                          min_val_right=0.07, max_val_right=0.13)
     com = []
@@ -105,10 +111,13 @@ def simulation_qp_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_pert
     prev = xk_init
     window_steps = 300
 
+    zk_min = np.array(list(zk_min) + [zk_min[-1]] * window_steps)
+    zk_max = np.array(list(zk_max) + [zk_max[-1]] * window_steps)
+
     # Construction of reused matrices for performance
     Pu = p_u_matrix(t_step, h_com, g, window_steps)
     Px = p_x_matrix(t_step, h_com, g, window_steps)
-    for i in range(steps - window_steps):
+    for i in range(steps):
         jerk = optimal_jerk_qp(n=window_steps, xk_init=prev,
                                zk_min=zk_min[i:window_steps + i], zk_max=zk_max[i:window_steps + i],
                                Pu=Pu, Px=Px)
@@ -131,14 +140,19 @@ def simulation_with_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_pe
                                          duration_right=0.07, duration_transition=0.018,
                                          min_val_left=-0.13, max_val_left=-0.07,
                                          min_val_right=0.07, max_val_right=0.13)
+
+    window_steps = 300
+    zk_min = np.array(list(zk_min) + [zk_min[-1]] * window_steps)
+    zk_max = np.array(list(zk_max) + [zk_max[-1]] * window_steps)
+
     zk_ref = (zk_min + zk_max)/2
     com = []
     com_velocity = []
     com_acceleration = []
     cop = []
     prev = xk_init
-    window_steps = 300
-    for i in range(steps - window_steps):
+
+    for i in range(steps):
         jerk = optimal_jerk(t_step=t_step, h_com=h_com, g=g, n=window_steps, xk_init=prev,
                             zk_ref=zk_ref[i:window_steps + i], r_q=r_q)
         next = next_com(jerk=jerk[0], previous=prev, t_step=t_step)
@@ -198,4 +212,3 @@ def simulation_x_y(t_step, steps, g, h_com, xk_init, yk_init):
     cop_forward, com_forward, _, _, zk_min_forward, zk_max_forward, x2 = simulation_qp(t_step, steps, g, h_com, xk_init,
                                                                         support_values_forward)
     return cop_lat, com_lat, cop_forward, com_forward
-    
