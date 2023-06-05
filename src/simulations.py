@@ -22,11 +22,11 @@ from utils import *
 #     return cop, com, com_velocity, com_acceleration, zk_ref, x, jerk
 
 
-def simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init):
-    zk_min, zk_max = construct_zmin_zmax(steps=steps,duration_double_init=0.26, duration_left=0.07,
+def simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init, support_values):
+    zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
                                          duration_right=0.07, duration_transition=0.018,
-                                         min_val_left=-0.13, max_val_left=-0.07,
-                                         min_val_right=0.07, max_val_right=0.13)
+                                         min_val_left=support_values[0], max_val_left=support_values[1],
+                                         min_val_right=support_values[2], max_val_right=support_values[3])
 
     window_steps = 300
     zk_min = np.array(list(zk_min) + [zk_min[-1]]*window_steps)
@@ -204,11 +204,15 @@ def simulation_possible_trajectories(t_step, steps, g, h_com, r_q, xk_init):
     return cop, com, com_velocity, com_acceleration, zk_min, zk_max, x, possible_trajectories
 
 
-def simulation_x_y(t_step, steps, g, h_com, xk_init, yk_init):
+def simulation_x_y_decoupled(t_step, steps, g, h_com, xk_init, yk_init):
     support_values_lateral = [-0.13, -0.07, 0.07, 0.13]
-    cop_lat, com_lat, _, _, zk_min_lat, zk_max_lat, x2 = simulation_qp(t_step, steps, g, h_com, xk_init, support_values_lateral)
-    x2 = x2[:len(cop_lat)]
+    cop_lat, com_lat, _, _, zk_min_lat, zk_max_lat, x = simulation_qp(t_step, steps, g, h_com, xk_init,
+                                                                                 support_values_lateral)
+    x = x[:len(cop_lat)]
     support_values_forward = [-0.13, -0.01, 0.01, 0.13]
-    cop_forward, com_forward, _, _, zk_min_forward, zk_max_forward, x2 = simulation_qp(t_step, steps, g, h_com, xk_init,
+    cop_forward, com_forward, _, _, zk_min_forward, zk_max_forward, _ = simulation_qp(t_step, steps, g, h_com, xk_init,
                                                                         support_values_forward)
-    return cop_lat, com_lat, cop_forward, com_forward
+    return cop_lat, com_lat, cop_forward, com_forward, zk_min_lat, zk_max_lat, zk_min_forward, zk_max_forward, x
+
+
+

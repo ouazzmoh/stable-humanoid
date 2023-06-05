@@ -11,8 +11,9 @@ def main():
     h_com = 0.8
     r_q = 1e-6
     xk_init = (0, 0, 0)
+    support_values = [-0.13, -0.07, 0.07, 0.13] # The support values for lateral motion
     # Analytic resolution
-    cop0, com0, _, _, zk_min0, zk_max0, x0 = simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init)
+    cop0, com0, _, _, zk_min0, zk_max0, x0 = simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init, support_values)
     x0 = x0[:len(cop0)]
     plt.plot(x0, zk_min0[:len(cop0)], linestyle="--", linewidth=0.2, color="gray")
     plt.plot(x0, zk_max0[:len(cop0)], linestyle="--", linewidth=0.2, color="gray")
@@ -37,7 +38,7 @@ def main():
     plt.show()
 
     # QP resolution
-    support_values = [-0.13, -0.07, 0.07, 0.13]
+
     cop2, com2, _, _, zk_min2, zk_max2, x2 = simulation_qp(t_step, steps, g, h_com, xk_init, support_values)
     x2 = x2[:len(cop2)]
     plt.plot(x2, zk_min2[:len(cop2)], linestyle="--", linewidth=0.2, color="gray")
