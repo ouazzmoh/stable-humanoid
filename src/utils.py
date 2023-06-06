@@ -129,6 +129,45 @@ def construct_zmin_zmax(steps, duration_double_init, duration_left, duration_rig
     return np.array(zk_min), np.array(zk_max)
 
 
+def construct_zmin_zmax_moving(steps, duration_double_init, duration_step, duration_transition,
+                        foot_size, spacing):
+    """
+        Construct the minimum and maximum for the center of pressure
+        This is for a moving robot
+        The duration of the support is expressed as percentage of steps
+        The values of the double support are in [min_val_left, max_val_right]
+        :param steps: number of steps of the whole simulation
+        :return: two arrays z_min and z_max
+        """
+
+    # Initial double support
+    zk_min = [-foot_size] * int(steps * duration_double_init)
+    zk_max = [foot_size] * int(steps * duration_double_init)
+
+    # Lifting foot first step
+    zk_min += [-foot_size]*int(steps*duration_step)
+    zk_max += [0] * int(steps*duration_step)
+
+    # First Transition
+    zk_min += [-foot_size] * int(steps * duration_transition)
+    zk_max += [foot_size] * int(steps * duration_transition)
+
+    for step_number in range(1, 10):
+        # Lifting foot for a step
+        zk_min += [(step_number - 1) * foot_size] * int(steps * duration_step)
+        zk_max += [step_number * foot_size] * int(steps * duration_step)
+        if step_number == 1:
+            # Transition
+            zk_min += [0] * int(steps * duration_transition)
+            zk_max += [2 * foot_size] * int(steps * duration_transition)
+        else :
+            # Transition
+            zk_min += [(step_number-1) * foot_size] * int(steps * duration_transition)
+            zk_max += [(step_number+1) * foot_size] * int(steps * duration_transition)
+
+    return np.array(zk_min), np.array(zk_max)
+
+
 def construct_zref(steps):
     """
     Construct the references for the center of pressure
