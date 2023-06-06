@@ -152,18 +152,19 @@ def construct_zmin_zmax_moving(steps, duration_double_init, duration_step, durat
     zk_min += [-foot_size] * int(steps * duration_transition)
     zk_max += [foot_size] * int(steps * duration_transition)
 
-    for step_number in range(1, 10):
+    # Number of steps to take
+    number_of_steps = int((steps - len(zk_min))/((duration_step + duration_transition)*steps))
+
+    for step_number in range(1, number_of_steps):
         # Lifting foot for a step
         zk_min += [(step_number - 1) * foot_size] * int(steps * duration_step)
         zk_max += [step_number * foot_size] * int(steps * duration_step)
-        if step_number == 1:
-            # Transition
-            zk_min += [0] * int(steps * duration_transition)
-            zk_max += [2 * foot_size] * int(steps * duration_transition)
-        else :
-            # Transition
-            zk_min += [(step_number-1) * foot_size] * int(steps * duration_transition)
-            zk_max += [(step_number+1) * foot_size] * int(steps * duration_transition)
+        # Transition
+        zk_min += [(step_number-1) * foot_size] * int(steps * duration_transition)
+        zk_max += [(step_number+1) * foot_size] * int(steps * duration_transition)
+
+    zk_min += [zk_min[-1]] * abs(steps - len(zk_min))
+    zk_max += [zk_max[-1]] * abs(steps - len(zk_max))
 
     return np.array(zk_min), np.array(zk_max)
 
