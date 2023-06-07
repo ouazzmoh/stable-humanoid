@@ -48,3 +48,5 @@ The next step is coupling x and y in the same QP problem and solving it
 
 In this part we will relax the hypothesis that x and y are independant, and solve a QP problem 
 that accounts for both dimensions
+the new QP that we get is the following:
+![Example Image](qp.png)
