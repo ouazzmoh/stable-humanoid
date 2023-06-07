@@ -71,6 +71,72 @@ def optimal_jerk_qp(n, xk_init, zk_min, zk_max, Pu, Px):
     return x
 
 
+def d_x_vector(theta):
+    """
+    Coordinates of the normal vectors to the edges of the feet (x)
+    :param theta:
+    :return:
+    """
+    return np.array([np.cos(theta), -np.sin(theta), -np.cos(theta), np.sin(theta)])
+
+
+def d_y_vector(theta):
+    """
+    Coordinates of the normal vectors to the edges of the feet (y)
+    :param theta:
+    :return:
+    """
+    return np.array([np.sin(theta), np.cos(theta), -np.sin(theta), -np.cos(theta)])
+
+def Dk_matrix(m, theta_ref):
+    Dx = np.zeros(shape=(4*m, m))
+    Dy = np.zeros(shape=(4 * m, m))
+    for j in range(m):
+        d_x = d_x_vector(theta_ref[j])
+        d_y = d_y_vector(theta_ref[j])
+        for k in range(4):
+            Dx[4*j + k, j] = d_x[k]
+            Dy[4*j + k, j] = d_y[k]
+    return np.hstack([Dx, Dy])
+
+
+
+
+def optimal_jerk_qp_2D(n, xk_init, yk_init, zk_ref_x, zk_ref_y,  Pzu, Pzs, alpha, gamma, theta_ref, foot_dimensions):
+    """
+    :param n:
+    :param xk_init:
+    :param yk_init:
+    :param zk_ref_x:
+    :param zk_ref_y:
+    :param Pzu:
+    :param Pzs:
+    :param alpha:
+    :param gamma:
+    :param theta_ref:
+    :param foot_dimensions: (width x length)
+    :return:
+    """
+    # Objective matrix Q (Quadratic part)
+    Qprime = alpha * np.eye(n) + gamma * Pzu.T @ Pzu
+    Q = np.block([[Qprime, np.zeros(shape=(n, n))]
+                 , [np.zeros(shape=(n, n)), Qprime]])
+    # Objective vector p (Linear part)
+    p = np.hstack([gamma * Pzu.T @ (Pzs @ xk_init - zk_ref_x), gamma * Pzu.T @ (Pzs @ yk_init - zk_ref_y)])
+    # Inequality constraints Gx <= h
+    Dk = Dk_matrix(n, theta_ref)
+    Pzu_Pzu = np.block([[Pzu, np.zeros(shape=(n, n))],
+                       [np.zeros(shape=(n, n)), Pzu]])
+    G = Dk @ Pzu_Pzu
+    # b is in the form (width/2, -width/2, width/2, -........., height/2, -height/2, height/2,....)
+    b_k = np.array([foot_dimensions[0]/2, -foot_dimensions[0]/2]*n + [foot_dimensions[1]/2, -foot_dimensions[1]/2]*n)
+    a = np.hstack((zk_ref_x - Pzs @ xk_init, zk_ref_y - Pzs @ yk_init))
+    h = b_k + Dk @ np.hstack([zk_ref_x - Pzs @ xk_init, zk_ref_y - Pzs @ yk_init])
+    # Solving the QP problem
+    u = solve_qp(Q, p, G, h, solver="quadprog")
+    return u
+
+
 def next_com(jerk, previous, t_step):
     """
     Getting the next (position, velocity, acceleration) vector using the recursive

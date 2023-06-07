@@ -41,3 +41,6 @@ If we consider that the robot alternates laterally but is moving forward we get 
 following result
 ![Example Image](plots/forward_moving.png)
 ![Example Image](plots/decoupled_moving.png)
+
+The next step is coupling x and y in the same QP problem and solving it
+

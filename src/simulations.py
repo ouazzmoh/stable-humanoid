@@ -103,10 +103,6 @@ def simulation_qp(t_step, steps, g, h_com, xk_init, zk_min, zk_max):
 
 def simulation_qp_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_perturbation, acc_perturbation,
                                 zk_min, zk_max):
-    # zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
-    #                                      duration_right=0.07, duration_transition=0.02,
-    #                                      min_val_left=-0.13, max_val_left=-0.07,
-    #                                      min_val_right=0.07, max_val_right=0.13)
     com = []
     com_velocity = []
     com_acceleration = []
@@ -140,10 +136,6 @@ def simulation_qp_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_pert
 
 def simulation_with_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_perturbation, acc_perturbation,
                                   zk_min, zk_max):
-    # zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
-    #                                      duration_right=0.07, duration_transition=0.018,
-    #                                      min_val_left=-0.13, max_val_left=-0.07,
-    #                                      min_val_right=0.07, max_val_right=0.13)
 
     window_steps = 300
     zk_min = np.array(list(zk_min) + [zk_min[-1]] * window_steps)
@@ -208,15 +200,55 @@ def simulation_possible_trajectories(t_step, steps, g, h_com, r_q, xk_init):
     return cop, com, com_velocity, com_acceleration, zk_min, zk_max, x, possible_trajectories
 
 
-# def simulation_x_y_decoupled(t_step, steps, g, h_com, xk_init, yk_init):
-#     support_values_lateral = [-0.13, -0.07, 0.07, 0.13]
-#     cop_lat, com_lat, _, _, zk_min_lat, zk_max_lat, x = simulation_qp(t_step, steps, g, h_com, xk_init,
-#                                                                                  support_values_lateral)
-#     x = x[:len(cop_lat)]
-#     support_values_forward = [-0.13, -0.01, 0.01, 0.13]
-#     cop_forward, com_forward, _, _, zk_min_forward, zk_max_forward, _ = simulation_qp(t_step, steps, g, h_com, xk_init,
-#                                                                         support_values_forward)
-#     return cop_lat, com_lat, cop_forward, com_forward, zk_min_lat, zk_max_lat, zk_min_forward, zk_max_forward, x
+def simulation_qp_coupled(t_step, steps, g, h, xk_init, yk_init, zk_min_x, zk_max_x, zk_min_y, zk_max_y,
+                          alpha, gamma, theta_ref, foot_dimensions):
+    zk_ref_x = (zk_min_x + zk_max_x)/2
+    zk_ref_y = (zk_min_y + zk_max_y)/2
 
+    com_x = []
+    com_velocity_x = []
+    com_acceleration_x = []
+    cop_x = []
+    prev_x = xk_init
+
+    com_y = []
+    com_velocity_y = []
+    com_acceleration_y = []
+    cop_y = []
+    prev_y = yk_init
+
+    window_steps = 300
+
+    # Construction of reused matrices for performance
+    Pzu = p_u_matrix(t_step, h, g, window_steps)
+    Pzs = p_x_matrix(t_step, h, g, window_steps)
+    time = np.arange(0, 9, t_step)
+    for i in range(steps):
+        # Solve the problem and get u = (x, y)
+        jerks = optimal_jerk_qp_2D(n=window_steps, xk_init=prev_x, yk_init=prev_y,
+                                   zk_ref_x=zk_ref_x[i:window_steps + i], zk_ref_y=zk_ref_y[i:window_steps + i],
+                                   Pzu=Pzu, Pzs=Pzs, alpha=alpha, gamma=gamma,
+                                   theta_ref=theta_ref[i:window_steps + i],
+                                   foot_dimensions=foot_dimensions)
+        if not jerks:
+            print("Solution not found for the QP problem")
+            return
+        # Get the next x
+        next_x = next_com(jerk=jerks[0], previous=prev_x, t_step=t_step)
+        com_x.append(next_x[0])
+        com_velocity_x.append(next_x[1])
+        com_acceleration_x.append(next_x[2])
+        cop_x.append(np.array([1, 0, -h / g]) @ next_x)
+        prev_x = next_x
+
+        # Get the next y
+        next_y = next_com(jerk=jerks[window_steps], previous=prev_y, t_step=t_step)
+        com_y.append(next_y[0])
+        com_velocity_y.append(next_y[1])
+        com_acceleration_y.append(next_y[2])
+        cop_y.append(np.array([1, 0, -h / g]) @ next_y)
+        prev_y = next_y
+
+    return cop_x, com_x, cop_y, com_y, time
 
 
