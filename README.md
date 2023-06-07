@@ -44,3 +44,7 @@ following result
 
 The next step is coupling x and y in the same QP problem and solving it
 
+### Coupling lateral (y) and forward (x)
+
+In this part we will relax the hypothesis that x and y are independant, and solve a QP problem 
+that accounts for both dimensions

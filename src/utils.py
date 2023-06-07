@@ -90,7 +90,7 @@ def d_y_vector(theta):
 
 def Dk_matrix(m, theta_ref):
     Dx = np.zeros(shape=(4*m, m))
-    Dy = np.zeros(shape=(4 * m, m))
+    Dy = np.zeros(shape=(4*m, m))
     for j in range(m):
         d_x = d_x_vector(theta_ref[j])
         d_y = d_y_vector(theta_ref[j])
@@ -128,9 +128,8 @@ def optimal_jerk_qp_2D(n, xk_init, yk_init, zk_ref_x, zk_ref_y,  Pzu, Pzs, alpha
     Pzu_Pzu = np.block([[Pzu, np.zeros(shape=(n, n))],
                        [np.zeros(shape=(n, n)), Pzu]])
     G = Dk @ Pzu_Pzu
-    # b is in the form (width/2, -width/2, width/2, -........., height/2, -height/2, height/2,....)
+    # b is in the form (length/2, -length/2, length/2, -........., width/2, -width/2, width/2,....)
     b_k = np.array([foot_dimensions[0]/2, -foot_dimensions[0]/2]*n + [foot_dimensions[1]/2, -foot_dimensions[1]/2]*n)
-    a = np.hstack((zk_ref_x - Pzs @ xk_init, zk_ref_y - Pzs @ yk_init))
     h = b_k + Dk @ np.hstack([zk_ref_x - Pzs @ xk_init, zk_ref_y - Pzs @ yk_init])
     # Solving the QP problem
     u = solve_qp(Q, p, G, h, solver="quadprog")

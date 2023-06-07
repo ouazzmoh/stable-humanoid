@@ -18,7 +18,7 @@ def main():
     alpha = 1
     gamma = 1
     theta_ref = np.array([np.pi / 4 for _ in range(steps)])
-    foot_dimensions = np.array([0.07, 0.12])  # width x height
+    foot_dimensions = np.array([0.12, 0.06])  # length x width
 
     support_values_forward = [-0.13, -0.01, 0.01, 0.13]
     support_values_lat = [-0.13, -0.07, 0.07, 0.13]
