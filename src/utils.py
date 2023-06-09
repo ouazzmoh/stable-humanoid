@@ -114,7 +114,7 @@ def optimal_jerk_qp_2D(n, xk_init, yk_init, zk_ref_x, zk_ref_y,  Pzu, Pzs, alpha
     :param alpha:
     :param gamma:
     :param theta_ref:
-    :param foot_dimensions: (width x length)
+    :param foot_dimensions: (length x width)
     :return:
     """
     # Objective matrix Q (Quadratic part)
