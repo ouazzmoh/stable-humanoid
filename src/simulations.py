@@ -200,18 +200,12 @@ def simulation_possible_trajectories(t_step, steps, g, h_com, r_q, xk_init):
     return cop, com, com_velocity, com_acceleration, zk_min, zk_max, x, possible_trajectories
 
 
-def simulation_qp_coupled(t_step, steps, g, h, xk_init, yk_init, zk_min_x, zk_max_x, zk_min_y, zk_max_y,
+def simulation_qp_coupled(t_step, steps, g, h, xk_init, yk_init, zk_ref_x, zk_ref_y,
                           alpha, gamma, theta_ref, foot_dimensions):
     window_steps = 300
 
-    zk_min_x = np.array(list(zk_min_x) + [zk_min_x[-1]] * window_steps)
-    zk_max_x = np.array(list(zk_max_x) + [zk_max_x[-1]] * window_steps)
-
-    zk_min_y = np.array(list(zk_min_y) + [zk_min_y[-1]] * window_steps)
-    zk_max_y = np.array(list(zk_max_y) + [zk_max_y[-1]] * window_steps)
-
-    zk_ref_x = (zk_min_x + zk_max_x)/2
-    zk_ref_y = (zk_min_y + zk_max_y)/2
+    zk_ref_x = np.array(list(zk_ref_x) + [zk_ref_x[-1]] * window_steps)
+    zk_ref_y = np.array(list(zk_ref_y) + [zk_ref_y[-1]] * window_steps)
 
     theta_ref = np.array(list(theta_ref) + [theta_ref[-1]] * window_steps)
 
@@ -228,34 +222,41 @@ def simulation_qp_coupled(t_step, steps, g, h, xk_init, yk_init, zk_min_x, zk_ma
     prev_y = yk_init
 
     # Construction of reused matrices for performance
-    Pzu = p_u_matrix(t_step, h, g, window_steps)
-    Pzs = p_x_matrix(t_step, h, g, window_steps)
+    n = window_steps
+    Pzu = p_u_matrix(t_step, h, g, n)
+    Pzs = p_x_matrix(t_step, h, g, n)
+    Qprime = alpha * np.eye(n) + gamma * Pzu.T @ Pzu
+    Q = np.block([[Qprime, np.zeros(shape=(n, n))]
+                     , [np.zeros(shape=(n, n)), Qprime]])
     time = np.arange(0, 9, t_step)
     for i in range(steps):
-        if len(zk_ref_x[i:window_steps +i]) < 300 or len(zk_ref_y[i:window_steps+i]) < 300 :
-            print("bug here")
-
         # Solve the problem and get u = (x, y)
         jerks = optimal_jerk_qp_2D(n=window_steps, xk_init=prev_x, yk_init=prev_y,
                                    zk_ref_x=zk_ref_x[i:window_steps + i], zk_ref_y=zk_ref_y[i:window_steps + i],
                                    Pzu=Pzu, Pzs=Pzs, alpha=alpha, gamma=gamma,
                                    theta_ref=theta_ref[i:window_steps + i],
-                                   foot_dimensions=foot_dimensions)
+                                   foot_dimensions=foot_dimensions, Q=Q)
         # Get the next x
-        next_x = next_com(jerk=jerks[0], previous=prev_x, t_step=t_step)
-        com_x.append(next_x[0])
-        com_velocity_x.append(next_x[1])
-        com_acceleration_x.append(next_x[2])
-        cop_x.append(np.array([1, 0, -h / g]) @ next_x)
-        prev_x = next_x
+        try:
+            next_x = next_com(jerk=jerks[0], previous=prev_x, t_step=t_step)
+            com_x.append(next_x[0])
+            com_velocity_x.append(next_x[1])
+            com_acceleration_x.append(next_x[2])
+            cop_x.append(np.array([1, 0, -h / g]) @ next_x)
+            prev_x = next_x
 
-        # Get the next y
-        next_y = next_com(jerk=jerks[window_steps], previous=prev_y, t_step=t_step)
-        com_y.append(next_y[0])
-        com_velocity_y.append(next_y[1])
-        com_acceleration_y.append(next_y[2])
-        cop_y.append(np.array([1, 0, -h / g]) @ next_y)
-        prev_y = next_y
+            # Get the next y
+            next_y = next_com(jerk=jerks[window_steps], previous=prev_y, t_step=t_step)
+            com_y.append(next_y[0])
+            com_velocity_y.append(next_y[1])
+            com_acceleration_y.append(next_y[2])
+            cop_y.append(np.array([1, 0, -h / g]) @ next_y)
+            prev_y = next_y
+        except:
+            print("i: --> ", i)
+            print("Bug here")
+
+
 
     return cop_x, com_x, cop_y, com_y, time
 

@@ -50,3 +50,12 @@ In this part we will relax the hypothesis that x and y are independant, and solv
 that accounts for both dimensions
 the new QP that we get is the following:
 ![Example Image](qp.png)
+
+the results we get are the following 
+
+for `theta = 0`
+![Example Image](plots/coupled_theta_0.png)
+
+for `theta = pi/4`
+
+![Example Image](plots/coupled_theta_pi:4.png)

@@ -23,19 +23,23 @@ def main():
     support_values_forward = [-0.13, -0.01, 0.01, 0.13]
     support_values_lat = [-0.13, -0.07, 0.07, 0.13]
 
+    zk_ref_x = [0] * int(steps * 0.03)
+    zk_ref_y = [0] * int(steps * 0.03)
+    for i in range(int(steps * 0.03), int(steps * 0.4)):
+        zk_ref_x += [i]
+        zk_ref_y += [i]
+    const_x, const_y = zk_ref_x[-1], zk_ref_y[-1]
+    for i in range(int(steps * 0.4), int(steps * 0.6)):
+        zk_ref_x += [const_x]
+        zk_ref_y += [const_y]
+    for i in range(int(steps * 0.6), steps):
+        zk_ref_x += [-i + int(steps * 0.6) + const_x]
+        zk_ref_y += [const_y]
 
-    zk_min_x, zk_max_x = construct_zmin_zmax_moving(steps=steps, duration_double_init=0.03,
-                                                duration_step=0.07, duration_transition=0.018, foot_size=0.12,
-                                                spacing=0.14)
+    # plt.plot(zk_ref_y)
+    # plt.plot(zk_ref_x)
+    # plt.show()
 
-    support_values_lat = [-0.13, -0.07, 0.07, 0.13]
-    zk_min_y, zk_max_y = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
-                                                 duration_right=0.07, duration_transition=0.018,
-                                                 min_val_left=support_values_lat[0], max_val_left=support_values_lat[1],
-                                                 min_val_right=support_values_lat[2],
-                                                 max_val_right=support_values_lat[3])
-    zk_ref_x = (zk_min_x + zk_max_x)/2
-    zk_ref_y = (zk_min_y + zk_max_y)/2
 
 
     cop_x, com_x, cop_y, com_y, t = simulation_qp_coupled(t_step, steps, g, h_com, xk_init, yk_init,
@@ -45,8 +49,7 @@ def main():
     # cop_lateral, com_lateral, cop_forward, com_forward, zk_min_lat, zk_max_lat, zk_min_forward, zk_max_forward, x = \
     #     simulation_x_y_decoupled(t_step, steps, g, h_com, xk_init, yk_init)
 
-    plt.plot(t, zk_min_y[:len(cop_y)], linestyle="--", linewidth=0.2, color="gray")
-    plt.plot(t, zk_max_y[:len(cop_y)], linestyle="--", linewidth=0.2, color="gray")
+    plt.plot(t, zk_ref_y[:len(cop_y)], linestyle="--", linewidth=0.2, color="gray")
     plt.plot(t, cop_y, color="green", label="cop", linewidth=0.7)
     # plt.scatter(x, cop, s=0.5)
     plt.plot(t, com_y, color="red", label="com", linewidth=1)
@@ -54,8 +57,7 @@ def main():
     plt.legend(loc="upper right")
     plt.show()
 
-    plt.plot(t, zk_min_x[:len(cop_x)], linestyle="--", linewidth=0.2, color="gray")
-    plt.plot(t, zk_max_x[:len(cop_x)], linestyle="--", linewidth=0.2, color="gray")
+    plt.plot(t, zk_ref_x[:len(cop_x)], linestyle="--", linewidth=0.2, color="gray")
     plt.plot(t, cop_x, color="green", label="cop", linewidth=0.7)
     # plt.scatter(x, cop, s=0.5)
     plt.plot(t, com_x, color="red", label="com", linewidth=1)
