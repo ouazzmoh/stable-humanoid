@@ -202,8 +202,18 @@ def simulation_possible_trajectories(t_step, steps, g, h_com, r_q, xk_init):
 
 def simulation_qp_coupled(t_step, steps, g, h, xk_init, yk_init, zk_min_x, zk_max_x, zk_min_y, zk_max_y,
                           alpha, gamma, theta_ref, foot_dimensions):
+    window_steps = 300
+
+    zk_min_x = np.array(list(zk_min_x) + [zk_min_x[-1]] * window_steps)
+    zk_max_x = np.array(list(zk_max_x) + [zk_max_x[-1]] * window_steps)
+
+    zk_min_y = np.array(list(zk_min_y) + [zk_min_y[-1]] * window_steps)
+    zk_max_y = np.array(list(zk_max_y) + [zk_max_y[-1]] * window_steps)
+
     zk_ref_x = (zk_min_x + zk_max_x)/2
     zk_ref_y = (zk_min_y + zk_max_y)/2
+
+    theta_ref = np.array(list(theta_ref) + [theta_ref[-1]] * window_steps)
 
     com_x = []
     com_velocity_x = []
@@ -217,22 +227,20 @@ def simulation_qp_coupled(t_step, steps, g, h, xk_init, yk_init, zk_min_x, zk_ma
     cop_y = []
     prev_y = yk_init
 
-    window_steps = 300
-
     # Construction of reused matrices for performance
     Pzu = p_u_matrix(t_step, h, g, window_steps)
     Pzs = p_x_matrix(t_step, h, g, window_steps)
     time = np.arange(0, 9, t_step)
     for i in range(steps):
+        if len(zk_ref_x[i:window_steps +i]) < 300 or len(zk_ref_y[i:window_steps+i]) < 300 :
+            print("bug here")
+
         # Solve the problem and get u = (x, y)
         jerks = optimal_jerk_qp_2D(n=window_steps, xk_init=prev_x, yk_init=prev_y,
                                    zk_ref_x=zk_ref_x[i:window_steps + i], zk_ref_y=zk_ref_y[i:window_steps + i],
                                    Pzu=Pzu, Pzs=Pzs, alpha=alpha, gamma=gamma,
                                    theta_ref=theta_ref[i:window_steps + i],
                                    foot_dimensions=foot_dimensions)
-        if not jerks:
-            print("Solution not found for the QP problem")
-            return
         # Get the next x
         next_x = next_com(jerk=jerks[0], previous=prev_x, t_step=t_step)
         com_x.append(next_x[0])

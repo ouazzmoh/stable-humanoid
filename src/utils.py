@@ -129,7 +129,7 @@ def optimal_jerk_qp_2D(n, xk_init, yk_init, zk_ref_x, zk_ref_y,  Pzu, Pzs, alpha
                        [np.zeros(shape=(n, n)), Pzu]])
     G = Dk @ Pzu_Pzu
     # b is in the form (length/2, -length/2, length/2, -........., width/2, -width/2, width/2,....)
-    b_k = np.array([foot_dimensions[0]/2, -foot_dimensions[0]/2]*n + [foot_dimensions[1]/2, -foot_dimensions[1]/2]*n)
+    b_k = np.array([foot_dimensions[0]/2, foot_dimensions[0]/2]*n + [foot_dimensions[1]/2, foot_dimensions[1]/2]*n)
     h = b_k + Dk @ np.hstack([zk_ref_x - Pzs @ xk_init, zk_ref_y - Pzs @ yk_init])
     # Solving the QP problem
     u = solve_qp(Q, p, G, h, solver="quadprog")
