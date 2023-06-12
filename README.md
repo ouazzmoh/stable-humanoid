@@ -53,9 +53,19 @@ the new QP that we get is the following:
 
 the results we get are the following 
 
-for `theta = 0`
+for `theta = 0` \\
 ![Example Image](plots/coupled_theta_0.png)
 
-for `theta = pi/4`
+for `theta = pi/4` \\
 
 ![Example Image](plots/coupled_theta_pi:4.png)
+
+If we change the reference of steps for the lateral and forward motion to follow this : \\
+
+![Example Image](plots/zkrefs.png)
+
+We get the following results \\
+
+![Example Image](plots/forward2.png)
+
+![Example Image](plots/traj2.png)
