@@ -197,6 +197,7 @@ def construct_zmin_zmax(steps, duration_double_init, duration_left, duration_rig
 def construct_zmin_zmax_moving(steps, duration_double_init, duration_step, duration_transition,
                         foot_size, spacing):
     """
+        The robot moves forward
         Construct the minimum and maximum for the center of pressure
         This is for a moving robot
         The duration of the support is expressed as percentage of steps
@@ -234,19 +235,22 @@ def construct_zmin_zmax_moving(steps, duration_double_init, duration_step, durat
     return np.array(zk_min), np.array(zk_max)
 
 
-def construct_zkref_custom(steps, duration_double_init, duration_step, duration_transition,
-                        foot_size, spacing):
+def construct_zmin_zmax_moving2(steps, duration_double_init, duration_step, duration_transition,
+                        foot_size, spacing, duration_back):
     """
+        The robot moves forward to a certain point, then moves backwards
         Construct the minimum and maximum for the center of pressure
         This is for a moving robot
         The duration of the support is expressed as percentage of steps
         The values of the double support are in [min_val_left, max_val_right]
         :param steps: number of steps of the whole simulation
+               duration_back: the moment where the robot starts going backwards
         :return: two arrays z_min and z_max
         """
 
     # Initial double support
-    zk_ref = [0] * int(steps * duration_double_init)
+    zk_min = [-foot_size] * int(steps * duration_double_init)
+    zk_max = [foot_size] * int(steps * duration_double_init)
 
     # Lifting foot first step
     zk_min += [-foot_size]*int(steps*duration_step)
@@ -259,7 +263,7 @@ def construct_zkref_custom(steps, duration_double_init, duration_step, duration_
     # Number of steps to take
     number_of_steps = int((steps - len(zk_min))/((duration_step + duration_transition)*steps))
 
-    for step_number in range(1, number_of_steps):
+    for step_number in range(1, int(duration_back * number_of_steps)):
         # Lifting foot for a step
         zk_min += [(step_number - 1) * foot_size] * int(steps * duration_step)
         zk_max += [step_number * foot_size] * int(steps * duration_step)
@@ -267,10 +271,35 @@ def construct_zkref_custom(steps, duration_double_init, duration_step, duration_
         zk_min += [(step_number-1) * foot_size] * int(steps * duration_transition)
         zk_max += [(step_number+1) * foot_size] * int(steps * duration_transition)
 
+
+
+    #The robot starts moving backwards
+    for step_number in range(int(duration_back * number_of_steps), number_of_steps):
+        if step_number == int(duration_back * number_of_steps):
+            # Lifting foot for a step
+            zk_min += [(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_step)
+            zk_max += [(number_of_steps-1 - step_number + 1) * foot_size] * int(steps * duration_step)
+            # Transition
+            zk_min += [(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_transition)
+            zk_max += [(number_of_steps-1 - step_number + 1) * foot_size] * int(steps * duration_transition)
+            # Transition
+            zk_min += [(number_of_steps - 1 - step_number - 1) * foot_size] * int(steps * duration_transition)
+            zk_max += [(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_transition)
+        else :
+            # Lifting foot for a step
+            zk_min += [(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_step)
+            zk_max += [(number_of_steps-1 - step_number+1) * foot_size] * int(steps * duration_step)
+            # Transition
+            zk_min += [(number_of_steps - 1 - step_number-1) * foot_size] * int(steps * duration_transition)
+            zk_max += [(number_of_steps-1 - step_number+1) * foot_size] * int(steps * duration_transition)
+
     zk_min += [zk_min[-1]] * abs(steps - len(zk_min))
     zk_max += [zk_max[-1]] * abs(steps - len(zk_max))
 
     return np.array(zk_min), np.array(zk_max)
+
+
+
 
 
 def construct_zref(steps):

@@ -37,6 +37,11 @@ def main():
     zk_ref_x = (zk_min_x + zk_max_x)/2
     zk_ref_y = (zk_min_y + zk_max_y)/2
 
+    plt.plot(zk_ref_y, label="zk_ref_y")
+    plt.plot(zk_ref_x, label="zk_ref_x")
+    plt.legend()
+    plt.show()
+
 
     cop_x, com_x, cop_y, com_y, t = simulation_qp_coupled(t_step, steps, g, h_com, xk_init, yk_init,
                                                           zk_ref_x, zk_ref_y,

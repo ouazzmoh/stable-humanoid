@@ -236,7 +236,7 @@ def simulation_qp_coupled(t_step, steps, g, h, xk_init, yk_init, zk_ref_x, zk_re
                                    Pzu=Pzu, Pzs=Pzs, alpha=alpha, gamma=gamma,
                                    theta_ref=theta_ref[i:window_steps + i],
                                    foot_dimensions=foot_dimensions, Q=Q)
-        # Get the next x
+        # Get the next x and y
         try:
             next_x = next_com(jerk=jerks[0], previous=prev_x, t_step=t_step)
             com_x.append(next_x[0])
