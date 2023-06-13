@@ -271,8 +271,6 @@ def construct_zmin_zmax_moving2(steps, duration_double_init, duration_step, dura
         zk_min += [(step_number-1) * foot_size] * int(steps * duration_transition)
         zk_max += [(step_number+1) * foot_size] * int(steps * duration_transition)
 
-
-
     #The robot starts moving backwards
     for step_number in range(int(duration_back * number_of_steps), number_of_steps):
         if step_number == int(duration_back * number_of_steps):
@@ -300,6 +298,145 @@ def construct_zmin_zmax_moving2(steps, duration_double_init, duration_step, dura
 
 
 
+
+
+def construct_zmin_zmax_sin(steps, duration_double_init, duration_step, duration_transition,
+                        foot_size, spacing, number_of_periods):
+    """
+        The robot moves forward to a certain point, then moves backwards
+        Construct the minimum and maximum for the center of pressure
+        This is for a moving robot
+        The duration of the support is expressed as percentage of steps
+        The values of the double support are in [min_val_left, max_val_right]
+        :param steps: number of steps of the whole simulation
+               duration_back: the moment where the robot starts going backwards
+        :return: two arrays z_min and z_max
+        """
+
+    # Initial double support
+    zk_max = [foot_size] * int(steps * duration_double_init)
+    zk_min = [-foot_size] * int(steps * duration_double_init)
+
+    zk_min_up, zk_max_up = construct_half_period_up(int(steps * (1/(2*number_of_periods))), foot_size, duration_step,
+                                                    duration_transition)
+
+    zk_min_down, zk_max_down = construct_half_period_down(int(steps * (1/(2*number_of_periods))), foot_size, duration_step,
+                                                          duration_transition)
+
+
+    for _ in range(number_of_periods):
+        zk_min += zk_min_up + zk_min_down
+        zk_max += zk_max_up + zk_max_down
+    zk_min += [zk_min[-1]] * abs(steps - len(zk_min))
+    zk_max += [zk_max[-1]] * abs(steps - len(zk_max))
+
+    return np.array(zk_min), np.array(zk_max)
+
+
+def construct_half_period_down(steps, foot_size, duration_step, duration_transition):
+    zk_min, zk_max = [], []
+    # Lifting foot first step
+    zk_max += [foot_size] * int(steps * duration_step)
+    zk_min += [0] * int(steps * duration_step)
+
+    # First Transition
+    zk_max += [foot_size] * int(steps * duration_transition)
+    zk_min += [-foot_size] * int(steps * duration_transition)
+
+    # Number of steps to take
+    number_of_steps = int((steps - len(zk_min)) / ((duration_step + duration_transition) * steps))
+
+    for step_number in range(1, int(0.5 * number_of_steps)):
+        # Lifting foot for a step
+        zk_max += [-(step_number - 1) * foot_size] * int(steps * duration_step)
+        zk_min += [-step_number * foot_size] * int(steps * duration_step)
+        # Transition
+        zk_max += [-(step_number - 1) * foot_size] * int(steps * duration_transition)
+        zk_min += [-(step_number + 1) * foot_size] * int(steps * duration_transition)
+
+    # The robot starts moving backwards
+    for step_number in range(int(0.5 * number_of_steps), number_of_steps):
+        if step_number == int(0.5 * number_of_steps):
+            # Lifting foot for a step
+            zk_max += [-(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_step)
+            zk_min += [-(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_step)
+            # Transition
+            zk_max += [-(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_transition)
+            zk_min += [-(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_transition)
+            # Transition
+            zk_max += [-(number_of_steps - 1 - step_number - 1) * foot_size] * int(steps * duration_transition)
+            zk_min += [-(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_transition)
+        elif step_number == number_of_steps-1:
+            # This function is mainly used for the sin and cos functions, and we don't want to stop (No double support)
+            # between half periods, the transition will be accounted for in the beginning of the following references
+            # Lifting foot for a step
+            # Lifting foot for a step
+            zk_max += [-(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_step)
+            zk_min += [-(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_step)
+
+        else:
+            # Lifting foot for a step
+            zk_max += [-(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_step)
+            zk_min += [-(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_step)
+            # Transition
+            zk_max += [-(number_of_steps - 1 - step_number - 1) * foot_size] * int(steps * duration_transition)
+            zk_min += [-(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_transition)
+
+
+    return zk_min, zk_max
+
+
+
+def construct_half_period_up(steps, foot_size, duration_step, duration_transition):
+
+    zk_min, zk_max = [], []
+    # Lifting foot first step
+    zk_min += [-foot_size] * int(steps * duration_step)
+    zk_max += [0] * int(steps * duration_step)
+
+    # First Transition
+    zk_min += [-foot_size] * int(steps * duration_transition)
+    zk_max += [foot_size] * int(steps * duration_transition)
+
+    # Number of steps to take
+    number_of_steps = int((steps - len(zk_min)) / ((duration_step + duration_transition) * steps))
+
+    for step_number in range(1, int(0.5 * number_of_steps)):
+        # Lifting foot for a step
+        zk_min += [(step_number - 1) * foot_size] * int(steps * duration_step)
+        zk_max += [step_number * foot_size] * int(steps * duration_step)
+        # Transition
+        zk_min += [(step_number - 1) * foot_size] * int(steps * duration_transition)
+        zk_max += [(step_number + 1) * foot_size] * int(steps * duration_transition)
+
+    # The robot starts moving backwards
+    for step_number in range(int(0.5 * number_of_steps), number_of_steps):
+        if step_number == int(0.5 * number_of_steps):
+            # Lifting foot for a step
+            zk_min += [(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_step)
+            zk_max += [(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_step)
+            # Transition
+            zk_min += [(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_transition)
+            zk_max += [(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_transition)
+            # Transition
+            zk_min += [(number_of_steps - 1 - step_number - 1) * foot_size] * int(steps * duration_transition)
+            zk_max += [(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_transition)
+        elif step_number == number_of_steps-1:
+            # This function is mainly used for the sin and cos functions, and we don't want to stop (No double support)
+            # between half periods, the transition will be accounted for in the beginning of the following references
+            # Lifting foot for a step
+            # Lifting foot for a step
+            zk_min += [(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_step)
+            zk_max += [(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_step)
+        else:
+            # Lifting foot for a step
+            zk_min += [(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_step)
+            zk_max += [(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_step)
+            # Transition
+            zk_min += [(number_of_steps - 1 - step_number - 1) * foot_size] * int(steps * duration_transition)
+            zk_max += [(number_of_steps - 1 - step_number + 1) * foot_size] * int(steps * duration_transition)
+
+    return zk_min, zk_max
 
 
 def construct_zref(steps):

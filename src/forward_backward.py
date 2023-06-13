@@ -24,11 +24,11 @@ def main():
     support_values_lat = [-0.13, -0.07, 0.07, 0.13]
 
     zk_min_x, zk_max_x = construct_zmin_zmax_moving2(steps=steps, duration_double_init=0.03,
-                                                    duration_step=0.07, duration_transition=0.018, foot_size=0.12,
+                                                    duration_step=0.07, duration_transition=0.018, foot_size=0.22,
                                                     spacing=0.14, duration_back=0.5)
 
     zk_min_y, zk_max_y = construct_zmin_zmax_moving(steps=steps, duration_double_init=0.03,
-                                                     duration_step=0.07, duration_transition=0.018, foot_size=0.12,
+                                                     duration_step=0.07, duration_transition=0.018, foot_size=0.16,
                                                      spacing=0.14)
 
     zk_ref_x = (zk_min_x + zk_max_x)/2
