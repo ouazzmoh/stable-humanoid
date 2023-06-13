@@ -69,3 +69,13 @@ We get the following results \\
 ![Example Image](plots/forward2.png)
 
 ![Example Image](plots/traj2.png)
+
+#### The results for a circular trajectory
+
+To get a circular trajectory, we create step references that ressemble the sinus and cosinus
+functions.
+
+![Example Image](plots/zkref_circle.png)
+![Example Image](plots/lateral_sin.png)
+![Example_Image](plots/forward_cos.png)
+![Example Image](plots/circle.png)

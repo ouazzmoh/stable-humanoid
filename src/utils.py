@@ -333,6 +333,45 @@ def construct_zmin_zmax_sin(steps, duration_double_init, duration_step, duration
     return np.array(zk_min), np.array(zk_max)
 
 
+def construct_zmin_zmax_cos(steps, duration_double_init, duration_step, duration_transition,
+                        foot_size, spacing, number_of_periods):
+    """
+        The robot moves forward to a certain point, then moves backwards
+        Construct the minimum and maximum for the center of pressure
+        This is for a moving robot
+        The duration of the support is expressed as percentage of steps
+        The values of the double support are in [min_val_left, max_val_right]
+        :param steps: number of steps of the whole simulation
+               duration_back: the moment where the robot starts going backwards
+        :return: two arrays z_min and z_max
+        """
+
+    # # Initial double support
+    # zk_max = [foot_size] * int(steps * duration_double_init)
+    # zk_min = [-foot_size] * int(steps * duration_double_init)
+
+
+    zk_min_up, zk_max_up = construct_half_period_up(int(steps * (1/(2*number_of_periods))), foot_size, duration_step,
+                                                    duration_transition)
+
+    zk_min_down, zk_max_down = construct_half_period_down(int(steps * (1/(2*number_of_periods))), foot_size, duration_step,
+                                                          duration_transition)
+
+    zk_max = zk_max_up[len(zk_max_up)//2:]
+    zk_min = zk_min_up[len(zk_min_up)//2:]
+
+    zk_max = [zk_max[0]] * int(steps * duration_double_init) + zk_max
+    zk_min = [zk_min[0] - foot_size] * int(steps * duration_double_init) + zk_min
+
+    for _ in range(number_of_periods):
+        zk_min += zk_min_down + zk_min_up
+        zk_max += zk_max_down + zk_max_up
+    zk_min += [zk_min[-1]] * abs(steps - len(zk_min))
+    zk_max += [zk_max[-1]] * abs(steps - len(zk_max))
+
+    return np.array(zk_min), np.array(zk_max)
+
+
 def construct_half_period_down(steps, foot_size, duration_step, duration_transition):
     zk_min, zk_max = [], []
     # Lifting foot first step
