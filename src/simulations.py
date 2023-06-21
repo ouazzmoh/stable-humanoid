@@ -1,4 +1,5 @@
 from utils import *
+import matplotlib.pyplot as plt
 
 #
 # def simulation_no_feedback(steps, g, h_com, t_step, r_q, xk_init):
@@ -98,6 +99,27 @@ def simulation_qp(t_step, steps, g, h_com, xk_init, zk_min, zk_max):
         com_acceleration.append(next[2])
         cop.append(np.array([1, 0, -h_com / g]) @ next)
         prev = next
+        ################## Debug
+        if i % 100 == 0:
+
+            cop_x_s, com_x_s = [], []
+            cop_y_s, com_y_s = [], []
+            jerk_x, jerk_y = [], []
+            for k in range(window_steps):
+                # Get the next x and y
+                next_x = next_com(jerk=jerk[k], previous=prev, t_step=t_step)
+                com_x_s.append(next_x[0])
+                cop_x_s.append(np.array([1, 0, -h_com / g]) @ next_x)
+                # jerk_x.append(jerks[k])
+            plt.plot(cop_x_s, label="cop_x", color="green")
+            plt.plot(jerk_x, label="jerk_x", color="red", linewidth="0.8")
+            plt.plot(zk_max[i:window_steps + i], label="zk_max", color="green", linewidth="0.4")
+            plt.plot(zk_min[i:window_steps + i], label="zk_min", color="green", linewidth="0.4")
+            plt.title("QP" + str(i + 1))
+            # plt.ylim((-2, 2))
+            plt.legend()
+            plt.show()
+
     return cop, com, com_velocity, com_acceleration, zk_min, zk_max, time
 
 
