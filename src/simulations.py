@@ -167,64 +167,83 @@ def simulation_with_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_pe
     return cop, com, com_velocity, com_acceleration, zk_min, zk_max, x
 
 
-def simulation_qp_coupled(t_step, steps, g, h, xk_init, yk_init, zk_ref_x, zk_ref_y,
-                          alpha, gamma, theta_ref, foot_dimensions):
-    window_steps = 300
+def simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, gamma, xk_init, yk_init,
+                          zk_ref_x, zk_ref_y, foot_dimensions):
+    # Problem matrices
+    N = int(prediction_time / T_pred)
+    Pzu = p_u_matrix(T_pred, h, g, N)
+    Pzs = p_x_matrix(T_pred, h, g, N)
+    Qprime = alpha * np.eye(N) + gamma * Pzu.T @ Pzu
+    Q = np.block([[Qprime, np.zeros(shape=(N, N))], [np.zeros(shape=(N, N)), Qprime]])
 
-    zk_ref_x = np.array(list(zk_ref_x) + [zk_ref_x[-1]] * window_steps)
-    zk_ref_y = np.array(list(zk_ref_y) + [zk_ref_y[-1]] * window_steps)
+    # Outputs
+    com_x, com_y = [], []
+    com_velocity_x, com_velocity_y = [], []
+    com_acceleration_x, com_acceleration_y = [], []
+    cop_x, cop_y = [], []
+    prev_x, prev_y = xk_init, yk_init
 
-    theta_ref = np.array(list(theta_ref) + [theta_ref[-1]] * window_steps)
+    # Padding: To avoid that the last window lacks elements
+    zk_ref_x = np.array(list(zk_ref_x) + [zk_ref_x[-1]] * int(prediction_time / T_control))
+    zk_ref_y = np.array(list(zk_ref_y) + [zk_ref_y[-1]] * int(prediction_time / T_control))
 
-    com_x = []
-    com_velocity_x = []
-    com_acceleration_x = []
-    cop_x = []
-    prev_x = xk_init
+    # Run the simulation
+    for i in range(int(simulation_time / T_control)):
+        # Get the current prediction horizon
+        zk_ref_pred_x = zk_ref_x[i:i + int(prediction_time / T_control)]
+        zk_ref_pred_x = zk_ref_pred_x[::int(T_pred / T_control)]  # Down sampling
+        assert (len(zk_ref_pred_x) == N)
 
-    com_y = []
-    com_velocity_y = []
-    com_acceleration_y = []
-    cop_y = []
-    prev_y = yk_init
+        zk_ref_pred_y = zk_ref_y[i:i + int(prediction_time / T_control)]
+        zk_ref_pred_y = zk_ref_pred_y[::int(T_pred / T_control)]  # Down sampling
+        assert (len(zk_ref_pred_y) == N)
 
-    # Construction of reused matrices for performance
-    n = window_steps
-    Pzu = p_u_matrix(t_step, h, g, n)
-    Pzs = p_x_matrix(t_step, h, g, n)
-    Qprime = alpha * np.eye(n) + gamma * Pzu.T @ Pzu
-    Q = np.block([[Qprime, np.zeros(shape=(n, n))]
-                     , [np.zeros(shape=(n, n)), Qprime]])
-    time = np.arange(0, 9, t_step)
-    for i in range(steps):
-        # Solve the problem and get u = (x, y)
-        jerks = optimal_jerk_qp_2D(n=window_steps, xk_init=prev_x, yk_init=prev_y,
-                                   zk_ref_x=zk_ref_x[i:window_steps + i], zk_ref_y=zk_ref_y[i:window_steps + i],
-                                   Pzu=Pzu, Pzs=Pzs, alpha=alpha, gamma=gamma,
-                                   theta_ref=theta_ref[i:window_steps + i],
-                                   foot_dimensions=foot_dimensions, Q=Q)
-        # Get the next x and y
-        try:
-            next_x = next_com(jerk=jerks[0], previous=prev_x, t_step=t_step)
-            com_x.append(next_x[0])
-            com_velocity_x.append(next_x[1])
-            com_acceleration_x.append(next_x[2])
-            cop_x.append(np.array([1, 0, -h / g]) @ next_x)
-            prev_x = next_x
+        # Solve the optimization problem ove the current prediction horizon
+        p = gamma * np.hstack((Pzu.T @ (Pzs @ prev_x - zk_ref_pred_x), Pzu.T @ (Pzs @ prev_y - zk_ref_pred_y)))
 
-            # Get the next y
-            next_y = next_com(jerk=jerks[window_steps], previous=prev_y, t_step=t_step)
-            com_y.append(next_y[0])
-            com_velocity_y.append(next_y[1])
-            com_acceleration_y.append(next_y[2])
-            cop_y.append(np.array([1, 0, -h / g]) @ next_y)
-            prev_y = next_y
-        except:
-            print("i: --> ", i)
-            print("Bug here")
+        D = Dk_matrix_alt(N)
+        b = np.array(
+            [foot_dimensions[0] / 2, foot_dimensions[0] / 2, foot_dimensions[1] / 2, foot_dimensions[1] / 2] * N)
+        G = D @ np.block([[Pzu, np.zeros(shape=(N, N))], [np.zeros(shape=(N, N)), Pzu]])
+        h_cond = b + D @ np.hstack((zk_ref_pred_x - Pzs @ prev_x, zk_ref_pred_y - Pzs @ prev_y))
+
+        jerk = solve_qp(P=Q, q=p, G=G, h=h_cond, solver="quadprog")
+        if jerk is None:
+            print(f"Cannot solve the QP at iteration {i}, most likely the value of xk diverges")
+        # ################## Debug
+        # if i % 100 == 0 or i == 99:
+        #     cop_x_s, com_x_s = [], []
+        #     cop_y_s, com_y_s = [], []
+        #     jerk_x, jerk_y = [], []
+        #     for k in range(int(prediction_time/T_pred)):
+        #         # Get the next x and y
+        #         next_x = next_com(jerk=jerk[k], previous=prev_x, t_step=T_pred)
+        #         com_x_s.append(next_x[0])
+        #         cop_x_s.append(np.array([1, 0, -h / g]) @ next_x)
+        #         # jerk_x.append(jerks[k])
+        #     plt.plot(cop_x_s, label="cop_x", color="green")
+        #     plt.plot(jerk_x, label="jerk_x", color="red", linewidth="0.8")
+        #     plt.plot(zk_ref_pred, label="zk_ref_x", color="green", linewidth="0.4")
+        #     plt.title("QP" + str(i + 1))
+        #     plt.ylim((-0.6, 0.6))
+        #     plt.legend()
+        #     plt.show()
+        # Apply the first result of the optimization
+        next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T_pred), \
+                         next_com(jerk=jerk[N], previous=prev_y, t_step=T_pred)
+        com_x.append(next_x[0])
+        com_y.append(next_y[0])
+        com_velocity_x.append(next_x[1])
+        com_velocity_y.append(next_y[1])
+        com_acceleration_x.append(next_x[2])
+        com_acceleration_y.append(next_y[2])
+        cop_x.append(np.array([1, 0, -h / g]) @ next_x)
+        cop_y.append(np.array([1, 0, -h / g]) @ next_y)
+        # Update the status of the position
+        prev_x, prev_y = next_x, next_y
 
 
 
-    return cop_x, com_x, cop_y, com_y, time
+    return cop_x, com_x, cop_y, com_y
 
 

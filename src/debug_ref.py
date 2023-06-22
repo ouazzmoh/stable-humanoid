@@ -19,7 +19,7 @@ def main():
     g = 9.81
     h = 0.8
     xk_init = (0, 0, 0)
-    alpha = 1e-3  # Weight for jerk
+    alpha = 1e-6  # Weight for jerk
     gamma = 1e-3  # Weight for zk_ref
 
     # Footstep planning
@@ -28,21 +28,8 @@ def main():
     duration_step = 0.08
     steps = int(simulation_time / T_control)
     ##
-    zk_min = [-foot_size] * int(duration_double_init * steps)
-    zk_max = [foot_size] * int(duration_double_init * steps)
-    # Number of steps to take
-    periods = int((steps - len(zk_min)) / (duration_step * steps * 2)) - 1
-    # First period of steps
-    left_min = [-foot_size] * int(steps * duration_step)
-    left_max = [0] * int(steps * duration_step)
-    right_min = [0] * int(steps * duration_step)
-    right_max = [foot_size] * int(steps * duration_step)
-    # Multiple periods
-    zk_min += (left_min + right_min) * periods
-    zk_max += (left_max + right_max) * periods
-    zk_min += [-foot_size] * abs((steps - len(zk_min)))
-    zk_max += [foot_size] * abs((steps - len(zk_max)))
-    zk_min, zk_max = np.array(zk_min), np.array(zk_max)
+    zk_min, zk_max = construct_zmin_zmax(steps, duration_double_init, duration_step,
+                                         foot_size)
 
     zk_ref = (zk_min + zk_max)/2
     ####

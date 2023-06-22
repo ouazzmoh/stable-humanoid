@@ -99,6 +99,16 @@ def Dk_matrix(m, theta_ref):
             Dy[4*j + k, j] = d_y[k]
     return np.hstack([Dx, Dy])
 
+def Dk_matrix_alt(N):
+    Dx = np.zeros(shape=(4 * N, N))
+    Dy = np.zeros(shape=(4 * N, N))
+    for j in range(N):
+        d_x = np.array([1, -1, 0, 0])
+        d_y = np.array([0, 0, 1, -1])
+        for k in range(4):
+            Dx[4 * j + k, j] = d_x[k]
+            Dy[4 * j + k, j] = d_y[k]
+    return np.hstack([Dx, Dy])
 
 
 
@@ -161,7 +171,7 @@ def mid(arr): return (arr[0] + arr[1])/2
 
 
 
-def construct_zmin_zmax(steps, duration_double_init, duration_left, duration_right, duration_transition,
+def construct_zmin_zmax_with_double(steps, duration_double_init, duration_left, duration_right, duration_transition,
                         min_val_left, max_val_left, min_val_right, max_val_right):
     """
         Construct the minimum and maximum for the center of pressure
@@ -194,7 +204,35 @@ def construct_zmin_zmax(steps, duration_double_init, duration_left, duration_rig
     return np.array(zk_min), np.array(zk_max)
 
 
-def construct_zmin_zmax_moving(steps, duration_double_init, duration_step, duration_transition,
+
+def construct_zmin_zmax(steps, duration_double_init, duration_step,
+                        foot_size):
+    """
+        Construct the minimum and maximum for the center of pressure
+        The duration of the support is expressed as percentage of steps
+        The values of the double support are in [min_val_left, max_val_right]
+        :param steps: number of steps of the whole simulation
+        :return: two arrays z_min and z_max
+        """
+
+    # Initial double support
+    zk_min = [-foot_size] * int(duration_double_init*steps)
+    zk_max = [foot_size] * int(duration_double_init*steps)
+    # Number of steps to take
+    periods = int((steps - len(zk_min)) / (duration_step * steps * 2)) - 1
+    # First period of steps
+    left_min = [-foot_size] * int(steps * duration_step)
+    left_max = [0] * int(steps * duration_step)
+    right_min = [0] * int(steps * duration_step)
+    right_max = [foot_size] * int(steps * duration_step)
+    # Multiple periods
+    zk_min += (left_min + right_min) * periods
+    zk_max += (left_max + right_max) * periods
+    zk_min += [-foot_size] * abs((steps - len(zk_min)))
+    zk_max += [foot_size] * abs((steps - len(zk_max)))
+    return np.array(zk_min), np.array(zk_max)
+
+def construct_zmin_zmax_moving_with_double(steps, duration_double_init, duration_step, duration_transition,
                         foot_size, spacing):
     """
         The robot moves forward
@@ -297,6 +335,38 @@ def construct_zmin_zmax_moving2(steps, duration_double_init, duration_step, dura
     return np.array(zk_min), np.array(zk_max)
 
 
+
+def construct_zmin_zmax_moving(steps, duration_double_init, duration_step, foot_size):
+    """
+        The robot moves forward
+        Construct the minimum and maximum for the center of pressure
+        This is for a moving robot
+        The duration of the support is expressed as percentage of steps
+        The values of the double support are in [min_val_left, max_val_right]
+        :param steps: number of steps of the whole simulation
+        :return: two arrays z_min and z_max
+        """
+
+    # Initial double support
+    zk_min = [-foot_size] * int(steps * duration_double_init)
+    zk_max = [foot_size] * int(steps * duration_double_init)
+
+    # Step on other direction
+    zk_min += [-foot_size]*int(steps*duration_step)
+    zk_max += [foot_size] * int(steps*duration_step)
+
+    # Number of steps to take
+    number_of_steps = int((steps - len(zk_min))/(duration_step*steps)) - 1
+
+    for step_number in range(1, number_of_steps):
+        # Lifting foot for a step
+        zk_min += [(step_number - 1) * foot_size] * int(steps * duration_step)
+        zk_max += [step_number * foot_size] * int(steps * duration_step)
+
+    zk_min += [zk_min[-1]] * abs(steps - len(zk_min))
+    zk_max += [zk_max[-1]] * abs(steps - len(zk_max))
+
+    return np.array(zk_min), np.array(zk_max)
 
 
 

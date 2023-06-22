@@ -1,77 +1,69 @@
-from utils import *
 from simulations import *
-import matplotlib.pyplot as plt
-
 
 def main():
-    t_step = 5e-3
-    # We simulate from 0 to 9 (s)
-    steps = int(9 / t_step)
+    # Problem variables
+    T_pred = 100e-3  # (s)
+    T_control = 100e-3  # (s)
+    simulation_time = 10  # (s)
+    prediction_time = 1  # (s)
     g = 9.81
-    h_com = 0.8
-    r_q = 1e-6
+    h = 0.8
     xk_init = (0, 0, 0)
-    # The support values for lateral motion
-    support_values = [-0.13, -0.07, 0.07, 0.13]
-    zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
-                                         duration_right=0.07, duration_transition=0.018,
-                                         min_val_left=-0.13, max_val_left=-0.07,
-                                         min_val_right=0.07, max_val_right=0.13)
-    # Analytic resolution
-    cop0, com0, _, _, zk_min0, zk_max0, x0 = simulation_with_feedback(t_step, steps, g, h_com, r_q,
-                                                                      xk_init, zk_min, zk_max)
-    x0 = x0[:len(cop0)]
-    plt.plot(x0, zk_min0[:len(cop0)], linestyle="--", linewidth=0.2, color="gray")
-    plt.plot(x0, zk_max0[:len(cop0)], linestyle="--", linewidth=0.2, color="gray")
-    plt.plot(x0, cop0, color="green", label="cop", linewidth=0.7)
-    # plt.scatter(x, cop, s=0.5)
-    plt.plot(x0, com0, color="red", label="com", linewidth=1)
-    plt.title("Analytic resolution of the problem")
-    plt.legend(loc="upper right")
-    plt.show()
-    # Analytic resolution with perturbation
-    cop1, com1, _, _, zk_min1, zk_max1, x1 = simulation_with_perturbations(t_step, steps, g, h_com,
-                                                                           r_q, xk_init, inst_perturbation=2.5,
-                                                                           acc_perturbation=1, zk_min=zk_min,
-                                                                           zk_max=zk_max)
-    x1 = x1[:len(cop1)]
-    plt.plot(x1, zk_min1[:len(cop1)], linestyle="--", linewidth=0.2, color="gray")
-    plt.plot(x1, zk_max1[:len(cop1)], linestyle="--", linewidth=0.2, color="gray")
-    plt.plot(x1, cop1, color="green", label="cop", linewidth=0.7)
-    # plt.scatter(x, cop, s=0.5)
-    plt.plot(x1, com1, color="red", label="com", linewidth=1)
-    plt.title("Analytic resolution of the problem with perturbations")
-    plt.legend(loc="upper right")
+    yk_init = (0, 0, 0)
+    alpha = 1e-3  # Weight for jerk
+    gamma = 1e-3  # Weight for zk_ref
+
+    # Footstep planning
+    foot_dimensions = [0.12, 0.06]  # length(x), width(y)
+    duration_double_init = 0.08
+    duration_step = 0.08
+    steps = int(simulation_time / T_control)
+
+    zk_min_x, zk_max_x = construct_zmin_zmax_moving(steps, duration_double_init, duration_step,
+                                                    foot_dimensions[0])
+    zk_ref_x = (zk_min_x + zk_max_x)/2
+
+    zk_min_y, zk_max_y = construct_zmin_zmax(steps, duration_double_init, duration_step,
+                                             foot_dimensions[1])
+    zk_ref_y = (zk_min_y + zk_max_y)/2
+
+    t = np.arange(0, simulation_time, T_control)
+
+    plt.plot(t, zk_ref_x, label="zk_ref_x")
+    plt.plot(t, zk_ref_y, label="zk_ref_y")
+    plt.legend()
     plt.show()
 
-    # QP resolution
+    # Running the MPC
 
-    cop2, com2, _, _, zk_min2, zk_max2, x2 = simulation_qp(t_step, steps, g, h_com, xk_init, zk_min, zk_max)
-    x2 = x2[:len(cop2)]
-    plt.plot(x2, zk_min2[:len(cop2)], linestyle="--", linewidth=0.2, color="gray")
-    plt.plot(x2, zk_max2[:len(cop2)], linestyle="--", linewidth=0.2, color="gray")
-    plt.plot(x2, cop2, color="green", label="cop", linewidth=0.7)
-    # plt.scatter(x, cop, s=0.5)
-    plt.plot(x2, com2, color="red", label="com", linewidth=1)
-    plt.title("QP resolution of the problem")
-    plt.legend(loc="upper right")
+    cop_x, com_x, cop_y, com_y = simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control,
+                                                       h, g, alpha, gamma, xk_init, yk_init,
+                                                       zk_ref_x, zk_ref_y, foot_dimensions)
+
+    # Plot the results
+
+    plt.plot(cop_x, label="cop")
+    plt.plot(com_x, label="com")
+    plt.plot(zk_min_x, linewidth=0.7)
+    plt.plot(zk_max_x, linewidth=0.7)
+    # plt.ylim((-0.8, 0.8))
+    plt.legend()
     plt.show()
 
-    # QP resolution with perturbations
-    cop3, com3, _, _, zk_min3, zk_max3, x3 = simulation_qp_perturbations(t_step, steps, g, h_com,
-                                                                           r_q, xk_init, inst_perturbation=2.5,
-                                                                           acc_perturbation=1, zk_min=zk_min,
-                                                                           zk_max=zk_max)
-    x3 = x3[:len(cop3)]
-    plt.plot(x3, zk_min3[:len(cop3)], linestyle="--", linewidth=0.2, color="gray")
-    plt.plot(x3, zk_max3[:len(cop3)], linestyle="--", linewidth=0.2, color="gray")
-    plt.plot(x3, cop3, color="green", label="cop", linewidth=0.7)
-    # plt.scatter(x, cop, s=0.5)
-    plt.plot(x3, com3, color="red", label="com", linewidth=1)
-    plt.title("QP resolution of the problem with perturbations")
-    plt.legend(loc="upper right")
+    plt.plot(cop_y, label="cop")
+    plt.plot(com_y, label="com")
+    plt.plot(zk_min_y, linewidth=0.7)
+    plt.plot(zk_max_y, linewidth=0.7)
+    # plt.ylim((-0.8, 0.8))
+    plt.legend()
     plt.show()
 
+
+    plt.plot(zk_ref_x, zk_ref_y)
+    plt.plot(cop_x, cop_y, label="cop", color="green")
+    plt.plot(com_x, com_y, label="com", color="red")
+    plt.legend()
+    plt.show()
 
 
 
