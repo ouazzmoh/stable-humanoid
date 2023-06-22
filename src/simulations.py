@@ -169,6 +169,23 @@ def simulation_with_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_pe
 
 def simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, gamma, xk_init, yk_init,
                           zk_ref_x, zk_ref_y, foot_dimensions):
+    """
+    Run the MPC to generate cop that allows stable walking
+    :param simulation_time: total duration of the simulation
+    :param prediction_time: time for prediction horizon
+    :param T_pred: sampling time for trajectory prediction
+    :param T_control: sampling time to run the MPC
+    :param h: COM height for the robot
+    :param g: gravitational constant
+    :param alpha: minimization weight for the jerk
+    :param gamma: minimzation weight for the references
+    :param xk_init: initial (position, velocity, acceleration) in x
+    :param yk_init: initial (position, velocity, acceleration) in y
+    :param zk_ref_x: step references for x
+    :param zk_ref_y: step references for y
+    :param foot_dimensions: length (x), width (y)
+    :return:
+    """
     # Problem matrices
     N = int(prediction_time / T_pred)
     Pzu = p_u_matrix(T_pred, h, g, N)
