@@ -79,3 +79,4 @@ functions.
 ![Example Image](plots/lateral_sin.png)
 ![Example_Image](plots/forward_cos.png)
 ![Example Image](plots/circle.png)
+![Example Image](plots/traj3.png)

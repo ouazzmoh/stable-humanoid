@@ -77,7 +77,7 @@ def d_x_vector(theta):
     :param theta:
     :return:
     """
-    return np.array([np.cos(theta), -np.sin(theta), -np.cos(theta), np.sin(theta)])
+    return np.array([np.cos(theta), -np.cos(theta), -np.sin(theta), np.sin(theta)])
 
 
 def d_y_vector(theta):
@@ -86,25 +86,14 @@ def d_y_vector(theta):
     :param theta:
     :return:
     """
-    return np.array([np.sin(theta), np.cos(theta), -np.sin(theta), -np.cos(theta)])
+    return np.array([np.sin(theta), -np.sin(theta), np.cos(theta), -np.cos(theta)])
 
-def Dk_matrix(m, theta_ref):
-    Dx = np.zeros(shape=(4*m, m))
-    Dy = np.zeros(shape=(4*m, m))
-    for j in range(m):
-        d_x = d_x_vector(theta_ref[j])
-        d_y = d_y_vector(theta_ref[j])
-        for k in range(4):
-            Dx[4*j + k, j] = d_x[k]
-            Dy[4*j + k, j] = d_y[k]
-    return np.hstack([Dx, Dy])
-
-def Dk_matrix_alt(N):
+def Dk_matrix(N, theta_ref):
     Dx = np.zeros(shape=(4 * N, N))
     Dy = np.zeros(shape=(4 * N, N))
     for j in range(N):
-        d_x = np.array([1, -1, 0, 0])
-        d_y = np.array([0, 0, 1, -1])
+        d_x = d_x_vector(theta_ref[j])
+        d_y = d_y_vector(theta_ref[j])
         for k in range(4):
             Dx[4 * j + k, j] = d_x[k]
             Dy[4 * j + k, j] = d_y[k]
@@ -206,7 +195,7 @@ def construct_zmin_zmax_with_double(steps, duration_double_init, duration_left, 
 
 
 def construct_zmin_zmax(steps, duration_double_init, duration_step,
-                        foot_size):
+                        foot_size, spacing):
     """
         Construct the minimum and maximum for the center of pressure
         The duration of the support is expressed as percentage of steps
@@ -216,20 +205,20 @@ def construct_zmin_zmax(steps, duration_double_init, duration_step,
         """
 
     # Initial double support
-    zk_min = [-foot_size] * int(duration_double_init*steps)
-    zk_max = [foot_size] * int(duration_double_init*steps)
+    zk_min = [-(foot_size + spacing)] * int(duration_double_init*steps)
+    zk_max = [foot_size + spacing] * int(duration_double_init*steps)
     # Number of steps to take
     periods = int((steps - len(zk_min)) / (duration_step * steps * 2)) - 1
     # First period of steps
-    left_min = [-foot_size] * int(steps * duration_step)
+    left_min = [-(foot_size + spacing)] * int(steps * duration_step)
     left_max = [0] * int(steps * duration_step)
     right_min = [0] * int(steps * duration_step)
-    right_max = [foot_size] * int(steps * duration_step)
+    right_max = [foot_size + spacing] * int(steps * duration_step)
     # Multiple periods
     zk_min += (left_min + right_min) * periods
     zk_max += (left_max + right_max) * periods
-    zk_min += [-foot_size] * abs((steps - len(zk_min)))
-    zk_max += [foot_size] * abs((steps - len(zk_max)))
+    zk_min += [-(foot_size+spacing)] * abs((steps - len(zk_min)))
+    zk_max += [foot_size+spacing] * abs((steps - len(zk_max)))
     return np.array(zk_min), np.array(zk_max)
 
 def construct_zmin_zmax_moving_with_double(steps, duration_double_init, duration_step, duration_transition,

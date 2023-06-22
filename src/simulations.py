@@ -168,7 +168,7 @@ def simulation_with_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_pe
 
 
 def simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, gamma, xk_init, yk_init,
-                          zk_ref_x, zk_ref_y, foot_dimensions):
+                          zk_ref_x, zk_ref_y, theta_ref, foot_dimensions):
     """
     Run the MPC to generate cop that allows stable walking
     :param simulation_time: total duration of the simulation
@@ -183,6 +183,7 @@ def simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control, h
     :param yk_init: initial (position, velocity, acceleration) in y
     :param zk_ref_x: step references for x
     :param zk_ref_y: step references for y
+    :param theta_ref : foot orientation references
     :param foot_dimensions: length (x), width (y)
     :return:
     """
@@ -203,6 +204,7 @@ def simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control, h
     # Padding: To avoid that the last window lacks elements
     zk_ref_x = np.array(list(zk_ref_x) + [zk_ref_x[-1]] * int(prediction_time / T_control))
     zk_ref_y = np.array(list(zk_ref_y) + [zk_ref_y[-1]] * int(prediction_time / T_control))
+    theta_ref = np.array(list(theta_ref) + [theta_ref[-1]] * int(prediction_time / T_control))
 
     # Run the simulation
     for i in range(int(simulation_time / T_control)):
@@ -215,10 +217,14 @@ def simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control, h
         zk_ref_pred_y = zk_ref_pred_y[::int(T_pred / T_control)]  # Down sampling
         assert (len(zk_ref_pred_y) == N)
 
+        theta_ref_pred = theta_ref[i:i + int(prediction_time / T_control)]
+        theta_ref_pred = theta_ref_pred[::int(T_pred / T_control)]  # Down sampling
+        assert (len(theta_ref_pred) == N)
+
         # Solve the optimization problem ove the current prediction horizon
         p = gamma * np.hstack((Pzu.T @ (Pzs @ prev_x - zk_ref_pred_x), Pzu.T @ (Pzs @ prev_y - zk_ref_pred_y)))
 
-        D = Dk_matrix_alt(N)
+        D = Dk_matrix(N, theta_ref_pred)
         b = np.array(
             [foot_dimensions[0] / 2, foot_dimensions[0] / 2, foot_dimensions[1] / 2, foot_dimensions[1] / 2] * N)
         G = D @ np.block([[Pzu, np.zeros(shape=(N, N))], [np.zeros(shape=(N, N)), Pzu]])
@@ -227,6 +233,7 @@ def simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control, h
         jerk = solve_qp(P=Q, q=p, G=G, h=h_cond, solver="quadprog")
         if jerk is None:
             print(f"Cannot solve the QP at iteration {i}, most likely the value of xk diverges")
+            return
         # ################## Debug
         # if i % 100 == 0 or i == 99:
         #     cop_x_s, com_x_s = [], []

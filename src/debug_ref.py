@@ -19,7 +19,7 @@ def main():
     g = 9.81
     h = 0.8
     xk_init = (0, 0, 0)
-    alpha = 1e-6  # Weight for jerk
+    alpha = 1e-3  # Weight for jerk
     gamma = 1e-3  # Weight for zk_ref
 
     # Footstep planning
