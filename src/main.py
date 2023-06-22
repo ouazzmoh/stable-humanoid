@@ -1,3 +1,5 @@
+import matplotlib.patches as patches
+from visuals import *
 from simulations import *
 
 def main():
@@ -10,7 +12,7 @@ def main():
     h = 0.8
     xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
-    alpha = 1e-3  # Weight for jerk
+    alpha = 1e-6  # Weight for jerk
     gamma = 1e-3  # Weight for zk_ref
 
     # Footstep planning
@@ -58,13 +60,14 @@ def main():
     plt.legend()
     plt.show()
 
-
-    plt.plot(zk_ref_x, zk_ref_y)
-    plt.plot(cop_x, cop_y, label="cop", color="green")
-    plt.plot(com_x, com_y, label="com", color="red")
+    fig, ax = plt.subplots()
+    ax.plot(cop_x, cop_y, label="cop", color="green")
+    ax.plot(com_x, com_y, label="com", color="red")
+    # Plot footsteps
+    plot_foot_steps(ax, zk_ref_x, zk_ref_y, foot_dimensions)
+    # Display the plot
     plt.legend()
     plt.show()
-
 
 
 if __name__ == "__main__":
