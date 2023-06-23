@@ -280,7 +280,7 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
     Pvs = p_v_s_matrix(T_pred, N)
     Pzu = p_z_u_matrix(T_pred, h, g, N)
     Pzs = p_z_s_matrix(T_pred, h, g, N)
-    Qprime = beta * Pvu.T @ Pvu
+    Qprime = beta * Pvu.T @ Pvu + alpha * np.eye(N) + gamma * Pzu.T @ Pzu
     Q = np.block([[Qprime, np.zeros(shape=(N, N))], [np.zeros(shape=(N, N)), Qprime]])
 
     # Outputs
@@ -321,7 +321,8 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
         assert (len(speed_ref_y_pred) == N)
 
         # Solve the optimization problem ove the current prediction horizon
-        p = beta * np.hstack((Pvu.T @ (Pvs @ prev_x - speed_ref_x_pred), Pvu.T @ (Pvs @ prev_y - speed_ref_y_pred)))
+        p = np.hstack(beta * (Pvu.T @ (Pvs @ prev_x - speed_ref_x_pred) + gamma*Pzu.T @ (Pzs @ prev_x - zk_ref_pred_x),
+                      beta * Pvu.T @ (Pvs @ prev_y - speed_ref_y_pred) + gamma*Pzu.T @ (Pzs @ prev_y - zk_ref_pred_y)))
 
         D = Dk_matrix(N, theta_ref_pred)
         b = np.array(
