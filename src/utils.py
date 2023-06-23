@@ -2,7 +2,7 @@ import numpy as np
 from qpsolvers import solve_qp
 
 
-def p_u_matrix(t_step, h, g, n):
+def p_z_u_matrix(t_step, h, g, n):
     """ Calculate the P_u matrix.
         The matrix is used to solve the QP problem (equation 11)
         :param t_step: the time step
@@ -21,7 +21,7 @@ def p_u_matrix(t_step, h, g, n):
     return Pu
 
 
-def p_x_matrix(t_step, h, g, n):
+def p_z_s_matrix(t_step, h, g, n):
     """ Calculate the P_x matrix.
             The matrix is used to solve the QP problem (equation 11)
             :param t_step: the time step
@@ -38,6 +38,34 @@ def p_x_matrix(t_step, h, g, n):
     return Px
 
 
+def p_v_u_matrix(t_step, n):
+    """
+    Pvu matrix
+    """
+    Pvu = np.zeros(shape=(n, n))
+    for diagonal_index in range(n):
+        # We loop over the lower diagonals to fill the toeplitz matrix
+        if diagonal_index == 0:
+            np.fill_diagonal(Pvu, (t_step**2)/2)
+        else:
+            fill_value = (1 + 2*diagonal_index) * (t_step ** 2) / 2
+            np.fill_diagonal(Pvu[diagonal_index:, :-diagonal_index], fill_value)
+    return Pvu
+
+
+def p_v_s_matrix(t_step, n):
+    """
+    Pvs matrix
+    """
+
+    Pvs = np.zeros(shape=(n, 3))
+    for i in range(n):
+        # The first column is already set to ones
+        Pvs[i][1] = 1
+        Pvs[i][2] = (i+1) * t_step
+    return Pvs
+
+
 def optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref, r_q):
     """
     Solve the QP problem analytically
@@ -50,8 +78,8 @@ def optimal_jerk(t_step, h_com, g, n, xk_init, zk_ref, r_q):
     :param r_q:
     :return:
     """
-    Pu = p_u_matrix(t_step, h_com, g, n)
-    Px = p_x_matrix(t_step, h_com, g, n)
+    Pu = p_z_u_matrix(t_step, h_com, g, n)
+    Px = p_z_s_matrix(t_step, h_com, g, n)
     # result = - np.linalg.inv(p_u.T @ p_u + r_q * np.eye(n)) @ p_u.T @ (p_x @ xk_init - zk_ref)
     result = np.linalg.solve(Pu.T @ Pu + r_q * np.eye(n),  -Pu.T @ (Px @ xk_init - zk_ref))
     return result

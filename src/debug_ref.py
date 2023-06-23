@@ -41,8 +41,8 @@ def main():
     plt.show()
     ###
     N = int(prediction_time / T_pred)
-    Pzu = p_u_matrix(T_pred, h, g, N)
-    Pzs = p_x_matrix(T_pred, h, g, N)
+    Pzu = p_z_u_matrix(T_pred, h, g, N)
+    Pzs = p_z_s_matrix(T_pred, h, g, N)
     Q = alpha * np.eye(N) + gamma * Pzu.T @ Pzu
 
     com = []

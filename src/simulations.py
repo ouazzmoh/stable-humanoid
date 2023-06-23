@@ -65,8 +65,8 @@ def simulation_qp(t_step, steps, g, h_com, xk_init, zk_min, zk_max):
     zk_max = np.array(list(zk_max) + [zk_max[-1]] * window_steps)
 
     # Construction of reused matrices for performance
-    Pu = p_u_matrix(t_step, h_com, g, window_steps)
-    Px = p_x_matrix(t_step, h_com, g, window_steps)
+    Pu = p_z_u_matrix(t_step, h_com, g, window_steps)
+    Px = p_z_s_matrix(t_step, h_com, g, window_steps)
     time = np.arange(0, 9, t_step)
     for i in range(steps):
         jerk = optimal_jerk_qp(n=window_steps, xk_init=prev,
@@ -115,8 +115,8 @@ def simulation_qp_perturbations(t_step, steps, g, h_com, r_q, xk_init, inst_pert
     zk_max = np.array(list(zk_max) + [zk_max[-1]] * window_steps)
 
     # Construction of reused matrices for performance
-    Pu = p_u_matrix(t_step, h_com, g, window_steps)
-    Px = p_x_matrix(t_step, h_com, g, window_steps)
+    Pu = p_z_u_matrix(t_step, h_com, g, window_steps)
+    Px = p_z_s_matrix(t_step, h_com, g, window_steps)
     for i in range(steps):
         jerk = optimal_jerk_qp(n=window_steps, xk_init=prev,
                                zk_min=zk_min[i:window_steps + i], zk_max=zk_max[i:window_steps + i],
@@ -189,8 +189,8 @@ def simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control, h
     """
     # Problem matrices
     N = int(prediction_time / T_pred)
-    Pzu = p_u_matrix(T_pred, h, g, N)
-    Pzs = p_x_matrix(T_pred, h, g, N)
+    Pzu = p_z_u_matrix(T_pred, h, g, N)
+    Pzs = p_z_s_matrix(T_pred, h, g, N)
     Qprime = alpha * np.eye(N) + gamma * Pzu.T @ Pzu
     Q = np.block([[Qprime, np.zeros(shape=(N, N))], [np.zeros(shape=(N, N)), Qprime]])
 
@@ -269,5 +269,83 @@ def simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control, h
 
 
     return cop_x, com_x, cop_y, com_y
+
+
+
+def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, gamma, beta, xk_init, yk_init,
+                          zk_ref_x, zk_ref_y, theta_ref, speed_ref_x, speed_ref_y, foot_dimensions):
+    # Problem matrices
+    N = int(prediction_time / T_pred)
+    Pvu = p_v_u_matrix(T_pred, N)
+    Pvs = p_v_s_matrix(T_pred, N)
+    Pzu = p_z_u_matrix(T_pred, h, g, N)
+    Pzs = p_z_s_matrix(T_pred, h, g, N)
+    Qprime = beta * Pvu.T @ Pvu
+    Q = np.block([[Qprime, np.zeros(shape=(N, N))], [np.zeros(shape=(N, N)), Qprime]])
+
+    # Outputs
+    com_x, com_y = [], []
+    com_velocity_x, com_velocity_y = [], []
+    com_acceleration_x, com_acceleration_y = [], []
+    cop_x, cop_y = [], []
+    prev_x, prev_y = xk_init, yk_init
+
+    # Padding: To avoid that the last window lacks elements
+    zk_ref_x = np.array(list(zk_ref_x) + [zk_ref_x[-1]] * int(prediction_time / T_control))
+    zk_ref_y = np.array(list(zk_ref_y) + [zk_ref_y[-1]] * int(prediction_time / T_control))
+    theta_ref = np.array(list(theta_ref) + [theta_ref[-1]] * int(prediction_time / T_control))
+
+    # Run the simulation
+    for i in range(int(simulation_time / T_control)):
+        # Get the current prediction horizon
+        zk_ref_pred_x = zk_ref_x[i:i + int(prediction_time / T_control)]
+        zk_ref_pred_x = zk_ref_pred_x[::int(T_pred / T_control)]  # Down sampling
+        assert (len(zk_ref_pred_x) == N)
+
+        zk_ref_pred_y = zk_ref_y[i:i + int(prediction_time / T_control)]
+        zk_ref_pred_y = zk_ref_pred_y[::int(T_pred / T_control)]  # Down sampling
+        assert (len(zk_ref_pred_y) == N)
+
+        theta_ref_pred = theta_ref[i:i + int(prediction_time / T_control)]
+        theta_ref_pred = theta_ref_pred[::int(T_pred / T_control)]  # Down sampling
+        assert (len(theta_ref_pred) == N)
+
+        speed_ref_x = theta_ref[i:i + int(prediction_time / T_control)]
+        speed_ref_x = speed_ref_x[::int(T_pred / T_control)]  # Down sampling
+        assert (len(speed_ref_x) == N)
+
+        speed_ref_y = theta_ref[i:i + int(prediction_time / T_control)]
+        speed_ref_y = speed_ref_y[::int(T_pred / T_control)]  # Down sampling
+        assert (len(speed_ref_y) == N)
+
+        # Solve the optimization problem ove the current prediction horizon
+        p = gamma * np.hstack((Pvu.T @ (Pvs @ prev_x - speed_ref_x), Pvu.T @ (Pvs @ prev_y - speed_ref_y)))
+
+        D = Dk_matrix(N, theta_ref_pred)
+        b = np.array(
+            [foot_dimensions[0] / 2, foot_dimensions[0] / 2, foot_dimensions[1] / 2, foot_dimensions[1] / 2] * N)
+        G = D @ np.block([[Pzu, np.zeros(shape=(N, N))], [np.zeros(shape=(N, N)), Pzu]])
+        h_cond = b + D @ np.hstack((zk_ref_pred_x - Pzs @ prev_x, zk_ref_pred_y - Pzs @ prev_y))
+
+        jerk = solve_qp(P=Q, q=p, G=G, h=h_cond, solver="quadprog")
+        if jerk is None:
+            print(f"Cannot solve the QP at iteration {i}, most likely the value of xk diverges")
+            return
+        next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T_pred), \
+                         next_com(jerk=jerk[N], previous=prev_y, t_step=T_pred)
+        com_x.append(next_x[0])
+        com_y.append(next_y[0])
+        com_velocity_x.append(next_x[1])
+        com_velocity_y.append(next_y[1])
+        com_acceleration_x.append(next_x[2])
+        com_acceleration_y.append(next_y[2])
+        cop_x.append(np.array([1, 0, -h / g]) @ next_x)
+        cop_y.append(np.array([1, 0, -h / g]) @ next_y)
+        # Update the status of the position
+        prev_x, prev_y = next_x, next_y
+
+    return cop_x, com_x, cop_y, com_y
+
+
 
 
