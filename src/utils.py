@@ -576,7 +576,11 @@ def construct_zref(steps):
 
 
 
-
+def construct_speed_ref(steps, duration_double_init, stop_at, average_speed):
+    speed = [0] * int(steps * duration_double_init)
+    speed += [average_speed] * int(stop_at * steps)
+    speed += [0] * (steps - len(speed))
+    return np.array(speed)
 
 
 

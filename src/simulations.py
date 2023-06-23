@@ -294,6 +294,8 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
     zk_ref_x = np.array(list(zk_ref_x) + [zk_ref_x[-1]] * int(prediction_time / T_control))
     zk_ref_y = np.array(list(zk_ref_y) + [zk_ref_y[-1]] * int(prediction_time / T_control))
     theta_ref = np.array(list(theta_ref) + [theta_ref[-1]] * int(prediction_time / T_control))
+    speed_ref_y = np.array(list(speed_ref_y) + [speed_ref_y[-1]] * int(prediction_time / T_control))
+    speed_ref_x = np.array(list(speed_ref_x) + [speed_ref_x[-1]] * int(prediction_time / T_control))
 
     # Run the simulation
     for i in range(int(simulation_time / T_control)):
@@ -310,16 +312,16 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
         theta_ref_pred = theta_ref_pred[::int(T_pred / T_control)]  # Down sampling
         assert (len(theta_ref_pred) == N)
 
-        speed_ref_x = theta_ref[i:i + int(prediction_time / T_control)]
-        speed_ref_x = speed_ref_x[::int(T_pred / T_control)]  # Down sampling
-        assert (len(speed_ref_x) == N)
+        speed_ref_x_pred = speed_ref_x[i:i + int(prediction_time / T_control)]
+        speed_ref_x_pred = speed_ref_x_pred[::int(T_pred / T_control)]  # Down sampling
+        assert (len(speed_ref_x_pred) == N)
 
-        speed_ref_y = theta_ref[i:i + int(prediction_time / T_control)]
-        speed_ref_y = speed_ref_y[::int(T_pred / T_control)]  # Down sampling
-        assert (len(speed_ref_y) == N)
+        speed_ref_y_pred = speed_ref_y[i:i + int(prediction_time / T_control)]
+        speed_ref_y_pred = speed_ref_y_pred[::int(T_pred / T_control)]  # Down sampling
+        assert (len(speed_ref_y_pred) == N)
 
         # Solve the optimization problem ove the current prediction horizon
-        p = gamma * np.hstack((Pvu.T @ (Pvs @ prev_x - speed_ref_x), Pvu.T @ (Pvs @ prev_y - speed_ref_y)))
+        p = beta * np.hstack((Pvu.T @ (Pvs @ prev_x - speed_ref_x_pred), Pvu.T @ (Pvs @ prev_y - speed_ref_y_pred)))
 
         D = Dk_matrix(N, theta_ref_pred)
         b = np.array(

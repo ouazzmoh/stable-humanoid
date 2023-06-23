@@ -13,7 +13,7 @@ def main():
     yk_init = (0, 0, 0)
     alpha = 1  # Weight for jerk
     gamma = 1  # Weight for zk_ref
-    beta = 1  # Weight for velocity
+    beta = 1   # Weight for velocity
 
     # Footstep planning
     foot_dimensions = [0.3, 0.25]  # length(x), width(y)
@@ -32,7 +32,9 @@ def main():
 
     theta_ref = 0 * np.ones(steps)  # radians
 
-    speed_ref_x, speed_ref_y = np.array([0]*(int(steps*0.75)) + [0]*(steps - int(steps*0.75))), 0*np.ones(steps)
+    speed_ref_x = construct_speed_ref(steps, duration_double_init + duration_step, stop_at=0.75,
+                                      average_speed=0.33)
+    speed_ref_y = np.zeros(steps)
 
     t = np.arange(0, simulation_time, T_control)
 
@@ -57,6 +59,7 @@ def main():
     plt.plot(zk_min_x, linewidth=0.7)
     plt.plot(zk_max_x, linewidth=0.7)
     plt.title("x movement")
+    # plt.ylim(0,2)
     plt.legend()
     plt.show()
 
@@ -73,12 +76,12 @@ def main():
     ax.plot(cop_x, cop_y, label="cop", color="green")
     ax.plot(com_x, com_y, label="com", color="red")
     # Plot footsteps
-    # plot_foot_steps(ax, zk_ref_x, zk_ref_y, theta_ref, foot_dimensions, spacing)
+    plot_foot_steps(ax, zk_ref_x, zk_ref_y, theta_ref, foot_dimensions, spacing)
     # Display the plot
     plt.legend()
     ax.set_xlabel("x(m)")
     ax.set_ylabel("y(m)")
-    ax.set_ylim((-0.03,0.03))
+    # ax.set_ylim((-0.03, 0.03))
     plt.title("Trajectory of robot")
     plt.show()
 
