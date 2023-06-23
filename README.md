@@ -80,3 +80,12 @@ functions.
 ![Example_Image](plots/forward_cos.png)
 ![Example Image](plots/circle.png)
 ![Example Image](plots/traj3.png)
+
+
+##### Speed minimization
+
+Minimizing speed alone
+![Example Image](plots/speed1.png)
+
+Minimizing speed and smoothing with jerk and step references
+![Example Image](plots/spped2.png)
