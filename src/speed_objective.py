@@ -32,8 +32,8 @@ def main():
 
     theta_ref = 0 * np.ones(steps)  # radians
 
-    speed_ref_x = construct_speed_ref(steps, duration_double_init + duration_step, stop_at=0.75,
-                                      average_speed=0.3)
+    speed_ref_x = construct_speed_ref(steps, duration_double_init + duration_step, stop_at=0.65,
+                                      average_speed=0)
     speed_ref_y = np.zeros(steps)
 
     t = np.arange(0, simulation_time, T_control)
@@ -63,7 +63,7 @@ def main():
     plt.plot(com_y, label="com")
     plt.plot(zk_min_y, linewidth=0.7)
     plt.plot(zk_max_y, linewidth=0.7)
-    # plt.ylim((-0.8, 0.8))
+    plt.ylim((-0.8, 0.8))
     plt.title("y movement")
     plt.legend()
     plt.show()
@@ -77,7 +77,7 @@ def main():
     plt.legend()
     ax.set_xlabel("x(m)")
     ax.set_ylabel("y(m)")
-    # ax.set_ylim((-0.03, 0.03))
+    ax.set_ylim((-0.03, 0.03))
     plt.title("Trajectory of robot")
     plt.show()
 

@@ -281,8 +281,7 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
     Pvs = p_v_s_matrix(T_pred, N)
     Pzu = p_z_u_matrix(T_pred, h, g, N)
     Pzs = p_z_s_matrix(T_pred, h, g, N)
-    Qprime = beta * Pvu.T @ Pvu + alpha * np.eye(N) + gamma * Pzu.T @ Pzu
-    Q = np.block([[Qprime, np.zeros(shape=(N, N))], [np.zeros(shape=(N, N)), Qprime]])
+
 
     # Outputs
     com_x, com_y = [], []
@@ -344,18 +343,25 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
         zk_ref_pred_y = Uck * curr_cop[1] + Uk @ steps_y[1:]
 
         # Solve the optimization problem ove the current prediction horizon
-        p = np.hstack(beta * (Pvu.T @ (Pvs @ prev_x - speed_ref_x_pred) + gamma*Pzu.T @ (Pzs @ prev_x - zk_ref_pred_x),
-                      beta * Pvu.T @ (Pvs @ prev_y - speed_ref_y_pred) + gamma*Pzu.T @ (Pzs @ prev_y - zk_ref_pred_y)))
+        Qprime = np.block([[beta * Pvu.T @ Pvu + alpha * np.eye(N) + gamma * Pzu.T @ Pzu, - gamma * Pzu.T @ Uk],
+                          [-gamma * Uk.T @ Pzu, gamma * Uk.T @ Uk]])
+        Q = np.block([[Qprime, np.zeros(shape=(N + Uk.shape[1], N+Uk.shape[1]))],
+                      [np.zeros(shape=(N+Uk.shape[1], N+Uk.shape[1])), Qprime]])
+        p = np.hstack((beta * Pvu.T @ (Pvs @ prev_x - speed_ref_x_pred) + gamma*Pzu.T @ (Pzs @ prev_x - Uck*curr_cop[0]),
+                      - gamma * Uk.T @ (Pzs @ prev_x - Uck * curr_cop[0]),
+                      beta * Pvu.T @ (Pvs @ prev_y - speed_ref_y_pred) + gamma*Pzu.T @ (Pzs @ prev_y - Uck*curr_cop[1]),
+                      -gamma * Uk.T @ (Pzs @ prev_y - Uck * curr_cop[1])))
 
         D = Dk_matrix(N, theta_ref_pred)
         b = np.array(
             [foot_dimensions[0] / 2, foot_dimensions[0] / 2, foot_dimensions[1] / 2, foot_dimensions[1] / 2] * N)
-        G = D @ np.block([[Pzu, np.zeros(shape=(N, N))], [np.zeros(shape=(N, N)), Pzu]])
-        h_cond = b + D @ np.hstack((zk_ref_pred_x - Pzs @ prev_x, zk_ref_pred_y - Pzs @ prev_y))
+        G = D @ np.block([[Pzu, - Uk, np.zeros(shape=(N, N)), np.zeros(shape=(N, N))],
+                          [np.zeros(shape=(N, N)), np.zeros(shape=(N, N)), Pzu, - Uk]])
+        h_cond = b + D @ np.hstack((Uck*curr_cop[0] - Pzs @ prev_x, Uck*curr_cop[1] - Pzs @ prev_y))
 
-        jerk = solve_qp(P=Q, q=p, G=G, h=h_cond, solver="quadprog")
+        jerk = solve_qp(P=Q, q=p, G=None, h=None, solver="quadprog")
         if jerk is None:
-            print(f"Cannot solve the QP at iteration {i}, most likely the value of xk diverges")
+            print(f"Cannot solve the QP at iteration {i}")
             return
         next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T_pred), \
                          next_com(jerk=jerk[N], previous=prev_y, t_step=T_pred)
