@@ -355,9 +355,10 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
 
         # To debug
 
-        visuals.plot_intermediate_states(i, prev_x, prev_y, prediction_time, T_pred, T, jerk,
-                                         h, g, N, zk_ref_pred_x,
-                                         zk_ref_pred_y, theta_ref_pred, foot_dimensions, each=5)
+        if i % 5 == 0:
+            visuals.plot_intermediate_states(i, prev_x, prev_y, prediction_time, T_pred, T, jerk,
+                                             h, g, N, zk_ref_pred_x,
+                                             zk_ref_pred_y, theta_ref_pred, foot_dimensions)
 
         # Update the status of the position
         prev_x, prev_y = next_x, next_y
