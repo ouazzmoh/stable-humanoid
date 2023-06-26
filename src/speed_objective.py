@@ -11,8 +11,8 @@ def main():
     h = 0.8
     xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
-    alpha = 1  # Weight for jerk
-    gamma = 1  # Weight for zk_ref
+    alpha = 0  # Weight for jerk
+    gamma = 0  # Weight for zk_ref
     beta = 1   # Weight for velocity
 
     # Footstep planning
@@ -33,7 +33,7 @@ def main():
     theta_ref = 0 * np.ones(steps)  # radians
 
     speed_ref_x = construct_speed_ref(steps, duration_double_init + duration_step, stop_at=0.75,
-                                      average_speed=0.33)
+                                      average_speed=0.3)
     speed_ref_y = np.zeros(steps)
 
     t = np.arange(0, simulation_time, T_control)

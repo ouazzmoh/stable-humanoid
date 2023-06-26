@@ -291,6 +291,8 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
     cop_x, cop_y = [], []
     prev_x, prev_y = xk_init, yk_init
 
+    curr_cop = (np.array([1, 0, -h / g])@xk_init, np.array([1, 0, -h / g])@yk_init)
+
     # Padding: To avoid that the last window lacks elements
     zk_ref_x = np.array(list(zk_ref_x) + [zk_ref_x[-1]] * int(prediction_time / T_control))
     zk_ref_y = np.array(list(zk_ref_y) + [zk_ref_y[-1]] * int(prediction_time / T_control))
@@ -337,9 +339,9 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
         Uck = U[:, 0]
         Uk = U[:, 1:]
 
-        # Using U in the Problem
-        zk_ref_pred_x2 = U @ steps_x
-        zk_ref_pred_y2 = U @ steps_y
+        # Using U in the Problem: The Uck chooses the current step and the Uk chooses the next steps
+        zk_ref_pred_x = Uck * curr_cop[0] + Uk @ steps_x[1:]
+        zk_ref_pred_y = Uck * curr_cop[1] + Uk @ steps_y[1:]
 
         # Solve the optimization problem ove the current prediction horizon
         p = np.hstack(beta * (Pvu.T @ (Pvs @ prev_x - speed_ref_x_pred) + gamma*Pzu.T @ (Pzs @ prev_x - zk_ref_pred_x),
@@ -363,8 +365,9 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
         com_velocity_y.append(next_y[1])
         com_acceleration_x.append(next_x[2])
         com_acceleration_y.append(next_y[2])
-        cop_x.append(np.array([1, 0, -h / g]) @ next_x)
-        cop_y.append(np.array([1, 0, -h / g]) @ next_y)
+        curr_cop = (np.array([1, 0, -h / g]) @ next_x, np.array([1, 0, -h / g]) @ next_y)
+        cop_x.append(curr_cop[0])
+        cop_y.append(curr_cop[1])
         # Update the status of the position
         prev_x, prev_y = next_x, next_y
 
