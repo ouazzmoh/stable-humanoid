@@ -1,5 +1,6 @@
 from utils import *
 import matplotlib.pyplot as plt
+from collections import Counter
 
 
 def simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init, zk_min, zk_max):
@@ -319,6 +320,26 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
         speed_ref_y_pred = speed_ref_y[i:i + int(prediction_time / T_control)]
         speed_ref_y_pred = speed_ref_y_pred[::int(T_pred / T_control)]  # Down sampling
         assert (len(speed_ref_y_pred) == N)
+
+        # Get unique steps
+
+        points = np.array([zk_ref_pred_x, zk_ref_pred_y]).T
+        # Get unique rows,
+        _, idx = np.unique(points, axis=0, return_index=True)
+        unique_points = points[np.sort(idx)]
+        # Store the unique steps in order
+        steps_x, steps_y = unique_points[:, 0], unique_points[:, 1]
+        # Store the occurence of the steps
+        occ = Counter(list(zip(zk_ref_pred_x, zk_ref_pred_y)))
+        # The U matrix allows us to choose which footstep at which instant
+        U = u_matrix(N, steps_x, steps_y, occ)
+
+        Uck = U[:, 0]
+        Uk = U[:, 1:]
+
+        # Using U in the Problem
+        zk_ref_pred_x2 = U @ steps_x
+        zk_ref_pred_y2 = U @ steps_y
 
         # Solve the optimization problem ove the current prediction horizon
         p = np.hstack(beta * (Pvu.T @ (Pvs @ prev_x - speed_ref_x_pred) + gamma*Pzu.T @ (Pzs @ prev_x - zk_ref_pred_x),

@@ -11,8 +11,8 @@ def main():
     h = 0.8
     xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
-    alpha = 0  # Weight for jerk
-    gamma = 0  # Weight for zk_ref
+    alpha = 1  # Weight for jerk
+    gamma = 1  # Weight for zk_ref
     beta = 1   # Weight for velocity
 
     # Footstep planning
@@ -43,17 +43,13 @@ def main():
     plt.legend()
     plt.show()
 
-
-
     # Running the MPC
-
     cop_x, com_x, cop_y, com_y = qp_speed(simulation_time, prediction_time, T_pred, T_control,
                                             h, g, alpha, gamma, beta, xk_init, yk_init,
                                             zk_ref_x, zk_ref_y, theta_ref, speed_ref_x,
                                             speed_ref_y, foot_dimensions)
 
     # Plot the results
-
     plt.plot(cop_x, label="cop")
     plt.plot(com_x, label="com")
     plt.plot(zk_min_x, linewidth=0.7)
