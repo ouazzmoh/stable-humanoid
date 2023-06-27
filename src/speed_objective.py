@@ -4,16 +4,17 @@ from simulations import *
 def main():
     # Problem variables
     T_pred = 100e-3  # (s)
-    T_control = 50e-3  # (s)
+    T_control = 100e-3  # (s)
     simulation_time = 10  # (s)
-    prediction_time = 2  # (s)
+    prediction_time = 1  # (s)
     g = 9.81
     h = 0.8
     xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
-    alpha = 1  # Weight for jerk
-    gamma = 1  # Weight for zk_ref
+    alpha = 1e-17  # Weight for jerk
+    gamma = 1e-17  # Weight for zk_ref
     beta = 1   # Weight for velocity
+
 
     # Footstep planning
     foot_dimensions = [0.3, 0.25]  # length(x), width(y)

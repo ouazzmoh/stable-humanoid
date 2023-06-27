@@ -81,7 +81,7 @@ def plot_foot_steps_single(ax, zk_ref_x, zk_ref_y, theta_ref, foot_dimensions, s
     # Single supports
 
     for x, y, angle in zip(steps_x, steps_y, theta):
-        if abs(y) > 0:
+        if y != 0:
             # Create a rectangle
             rect = patches.Rectangle((x - foot_dimensions[0] / 2, y - foot_dimensions[1] / 2),
                                      foot_dimensions[0], foot_dimensions[1],

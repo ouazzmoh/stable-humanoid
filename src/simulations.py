@@ -361,7 +361,7 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
                           [np.zeros(shape=(N, N)), np.zeros(shape=(N, N)), Pzu, - Uk]])
         h_cond = b + D @ np.hstack((Uck*curr_cop[0] - Pzs @ prev_x, Uck*curr_cop[1] - Pzs @ prev_y))
 
-        jerk = solve_qp(P=Q, q=p, G=None, h=None, solver="quadprog")
+        jerk = solve_qp(P=Q, q=p, G=G, h=h_cond, solver="quadprog")
         if jerk is None:
             print(f"Cannot solve the QP at iteration {i}")
             return
@@ -372,7 +372,7 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
             T = T_pred
 
         next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T), \
-                         next_com(jerk=jerk[N], previous=prev_y, t_step=T)
+                         next_com(jerk=jerk[N + Uk.shape[1]], previous=prev_y, t_step=T)
         com_x.append(next_x[0])
         com_y.append(next_y[0])
         com_velocity_x.append(next_x[1])
