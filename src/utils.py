@@ -290,7 +290,7 @@ def construct_zmin_zmax_moving_with_double(steps, duration_double_init, duration
     return np.array(zk_min), np.array(zk_max)
 
 
-def construct_zmin_zmax_moving2(steps, duration_double_init, duration_step, duration_transition,
+def construct_zmin_zmax_moving2_with_double(steps, duration_double_init, duration_step, duration_transition,
                         foot_size, spacing, duration_back):
     """
         The robot moves forward to a certain point, then moves backwards
@@ -584,6 +584,46 @@ def construct_speed_ref(steps, duration_double_init, stop_at, average_speed):
 
 
 
+def construct_zmin_zmax_moving2(steps, duration_double_init, duration_step,
+                                foot_size, spacing, duration_back):
+    """
+        The robot moves forward to a certain point, then moves backwards
+        Construct the minimum and maximum for the center of pressure
+        This is for a moving robot
+        The duration of the support is expressed as percentage of steps
+        The values of the double support are in [min_val_left, max_val_right]
+        :param steps: number of steps of the whole simulation
+               duration_back: the moment where the robot starts going backwards
+        :return: two arrays z_min and z_max
+        """
 
+    foot_size += spacing
+
+    # Initial double support
+    zk_min = [-foot_size] * int(steps * duration_double_init)
+    zk_max = [foot_size] * int(steps * duration_double_init)
+
+    # Lifting foot first step
+    zk_min += [-foot_size]*int(steps*duration_step)
+    zk_max += [0] * int(steps*duration_step)
+
+    # Number of steps to take
+    number_of_steps = int((steps - len(zk_min))/((duration_step)*steps))
+
+    for step_number in range(1, int(duration_back * number_of_steps)):
+        # Lifting foot for a step
+        zk_min += [(step_number - 1) * foot_size] * int(steps * duration_step)
+        zk_max += [step_number * foot_size] * int(steps * duration_step)
+
+    #The robot starts moving backwards
+    for step_number in range(int(duration_back * number_of_steps), number_of_steps):
+        # Lifting foot for a step
+        zk_min += [(number_of_steps - step_number - 1) * foot_size] * int(steps * duration_step)
+        zk_max += [(number_of_steps-1 - step_number+1) * foot_size] * int(steps * duration_step)
+
+    zk_min += [zk_min[-1]] * abs(steps - len(zk_min))
+    zk_max += [zk_max[-1]] * abs(steps - len(zk_max))
+
+    return np.array(zk_min), np.array(zk_max)
 
 

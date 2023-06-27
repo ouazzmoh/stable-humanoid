@@ -235,25 +235,6 @@ def simulation_qp_coupled(simulation_time, prediction_time, T_pred, T_control, h
         if jerk is None:
             print(f"Cannot solve the QP at iteration {i}, most likely the value of xk diverges")
             return
-        # ################## Debug
-        # if i % 100 == 0 or i == 99:
-        #     cop_x_s, com_x_s = [], []
-        #     cop_y_s, com_y_s = [], []
-        #     jerk_x, jerk_y = [], []
-        #     for k in range(int(prediction_time/T_pred)):
-        #         # Get the next x and y
-        #         next_x = next_com(jerk=jerk[k], previous=prev_x, t_step=T_pred)
-        #         com_x_s.append(next_x[0])
-        #         cop_x_s.append(np.array([1, 0, -h / g]) @ next_x)
-        #         # jerk_x.append(jerks[k])
-        #     plt.plot(cop_x_s, label="cop_x", color="green")
-        #     plt.plot(jerk_x, label="jerk_x", color="red", linewidth="0.8")
-        #     plt.plot(zk_ref_pred, label="zk_ref_x", color="green", linewidth="0.4")
-        #     plt.title("QP" + str(i + 1))
-        #     plt.ylim((-0.6, 0.6))
-        #     plt.legend()
-        #     plt.show()
-        # Apply the first result of the optimization
         next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T_pred), \
                          next_com(jerk=jerk[N], previous=prev_y, t_step=T_pred)
         com_x.append(next_x[0])
@@ -337,10 +318,15 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
             print(f"Cannot solve the QP at iteration {i}, most likely the value of xk diverges")
             return
 
+        # Choosing the proper time step
         if i > 0:
             T -= (i % int(T_pred/T_control)) * T_control
         if T <= 0:
             T = T_pred
+
+        # Compute the next state
+
+
 
         next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T), \
                          next_com(jerk=jerk[N], previous=prev_y, t_step=T)
