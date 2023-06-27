@@ -1,6 +1,7 @@
 from utils import *
 import matplotlib.pyplot as plt
 from collections import Counter
+import visuals
 
 
 def simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init, zk_min, zk_max):
@@ -300,6 +301,7 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
     speed_ref_x = np.array(list(speed_ref_x) + [speed_ref_x[-1]] * int(prediction_time / T_control))
 
     # Run the simulation
+    T = T_pred
     for i in range(int(simulation_time / T_control)):
         # Get the current prediction horizon
         zk_ref_pred_x = zk_ref_x[i:i + int(prediction_time / T_control)]
@@ -363,8 +365,14 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
         if jerk is None:
             print(f"Cannot solve the QP at iteration {i}")
             return
-        next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T_pred), \
-                         next_com(jerk=jerk[N], previous=prev_y, t_step=T_pred)
+
+        if i > 0:
+            T -= (i % int(T_pred/T_control)) * T_control
+        if T <= 0:
+            T = T_pred
+
+        next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T), \
+                         next_com(jerk=jerk[N], previous=prev_y, t_step=T)
         com_x.append(next_x[0])
         com_y.append(next_y[0])
         com_velocity_x.append(next_x[1])
@@ -374,6 +382,13 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
         curr_cop = (np.array([1, 0, -h / g]) @ next_x, np.array([1, 0, -h / g]) @ next_y)
         cop_x.append(curr_cop[0])
         cop_y.append(curr_cop[1])
+        # TODO: Comment this
+        #  DEBUG
+        if i % 5 == 0:
+            visuals.plot_intermediate_states(i, prev_x, prev_y, prediction_time, T_pred, T, jerk,
+                                             h, g, N, zk_ref_pred_x,
+                                             zk_ref_pred_y, theta_ref_pred, foot_dimensions)
+
         # Update the status of the position
         prev_x, prev_y = next_x, next_y
 
