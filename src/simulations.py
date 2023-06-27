@@ -353,8 +353,8 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
         cop_x.append(np.array([1, 0, -h / g]) @ next_x)
         cop_y.append(np.array([1, 0, -h / g]) @ next_y)
 
-        # To debug
-
+        # TODO: Comment this
+        #  DEBUG
         if i % 5 == 0:
             visuals.plot_intermediate_states(i, prev_x, prev_y, prediction_time, T_pred, T, jerk,
                                              h, g, N, zk_ref_pred_x,
