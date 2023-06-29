@@ -11,7 +11,6 @@ class FootstepPlanner:
     def __init__(self,
                  robot: Robot,
                  simulation_time: float,
-                 prediction_time: float,
                  duration_double_init: float,
                  duration_step: float,
                  trajectory_type: str,
@@ -20,7 +19,6 @@ class FootstepPlanner:
                  ) -> None:
         self.robot = robot
         self.simulation_time = simulation_time
-        self.prediction_time = prediction_time
         self.duration_double_init = duration_double_init
         self.duration_step = duration_step
         self.trajectory_type = trajectory_type
@@ -51,8 +49,7 @@ class FootstepPlanner:
     def footsteps_to_array(self,
                            from_time: float,
                            to_time: float,
-                           T : float) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
-                                          np.ndarray, np.ndarray):
+                           T : float) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray):
 
         assert(len(self.footsteps_x) == len(self.footsteps_y))
         # Detecting the index of the start and finish

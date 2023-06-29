@@ -326,8 +326,6 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
 
         # Compute the next state
 
-
-
         next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T), \
                          next_com(jerk=jerk[N], previous=prev_y, t_step=T)
         com_x.append(next_x[0])

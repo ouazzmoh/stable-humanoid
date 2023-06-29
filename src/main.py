@@ -3,6 +3,7 @@ from simulations import *
 
 from robot import Robot
 from footstep_planner import FootstepPlanner
+from controller import MPC
 
 
 T_pred = 100e-3  # (s)
@@ -22,38 +23,36 @@ beta = 1   # Weight for velocity
 average_speed = (0.3, 0)
 stop_at = (8, 0)  # (s)
 
-robot = Robot(foot_dimensions, spacing_x=0, spacing_y=spacing)
+robot = Robot(h, foot_dimensions, spacing_x=0, spacing_y=spacing)
 def moving_forward():
     # Problem variables
     xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
     # Footstep planning
-    #
-    # speed_ref_x = construct_speed_ref(steps, duration_double_init + duration_step, stop_at=0.75,
-    #                                   average_speed=0.3)
-    # speed_ref_y = np.zeros(steps)
-
-    step_planner = FootstepPlanner(robot, simulation_time, prediction_time, duration_double_init,
-                                   duration_step, "forward", average_speed=average_speed, stop_at=stop_at)
+    step_planner = FootstepPlanner(robot, simulation_time, duration_double_init,
+                                   duration_step, trajectory_type="forward", average_speed=average_speed,
+                                   stop_at=stop_at)
 
     zk_min_x, zk_max_x, zk_min_y, zk_max_y, theta_ref = step_planner.footsteps_to_array(0, simulation_time, T_control)
     speed_ref_x, speed_ref_y = step_planner.speed_to_array(0, simulation_time, T_control)
     t = np.arange(0, simulation_time, T_control)
-
     zk_ref_x = (zk_min_x + zk_max_x)/2
     zk_ref_y = (zk_min_y + zk_max_y)/2
-
     plt.plot(t, zk_ref_x, label="zk_ref_x")
     plt.plot(t, zk_ref_y, label="zk_ref_y")
     plt.legend()
     plt.show()
-
     # Running the MPC
 
-    cop_x, com_x, cop_y, com_y = qp_speed(simulation_time, prediction_time, T_pred, T_control,
-                                            h, g, alpha, gamma, beta, xk_init, yk_init,
-                                            zk_ref_x, zk_ref_y, theta_ref, speed_ref_x,
-                                            speed_ref_y, foot_dimensions)
+    controller = MPC(simulation_time, prediction_time, T_control, T_pred, robot, step_planner,
+                     alpha, beta, gamma, xk_init, yk_init, debug=True)
+
+    # cop_x, com_x, cop_y, com_y = qp_speed(simulation_time, prediction_time, T_pred, T_control,
+    #                                       h, g, alpha, gamma, beta, xk_init, yk_init,
+    #                                       zk_ref_x, zk_ref_y, theta_ref, speed_ref_x,
+    #                                       speed_ref_y, foot_dimensions)
+
+    cop_x, com_x, cop_y, com_y = controller.run_MPC()
 
     # Plot the results
 
