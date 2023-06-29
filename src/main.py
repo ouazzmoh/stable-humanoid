@@ -21,7 +21,7 @@ alpha = 1  # Weight for jerk
 gamma = 1  # Weight for zk_ref
 beta = 1   # Weight for velocity
 average_speed = (0.3, 0)
-stop_at = (8, 0)  # (s)
+stop_at = (8, 10)  # (s)
 
 robot = Robot(h, foot_dimensions, spacing_x=0, spacing_y=spacing)
 def moving_forward():
@@ -34,7 +34,7 @@ def moving_forward():
                                    stop_at=stop_at)
 
     zk_min_x, zk_max_x, zk_min_y, zk_max_y, theta_ref = step_planner.footsteps_to_array(0, simulation_time, T_control)
-    speed_ref_x, speed_ref_y = step_planner.speed_to_array(0, simulation_time, T_control)
+    # speed_ref_x, speed_ref_y = step_planner.speed_to_array(0, simulation_time, T_control)
     t = np.arange(0, simulation_time, T_control)
     zk_ref_x = (zk_min_x + zk_max_x)/2
     zk_ref_y = (zk_min_y + zk_max_y)/2

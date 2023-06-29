@@ -99,8 +99,10 @@ class MPC:
             zk_min_x, zk_max_x, zk_min_y, zk_max_y, theta_ref_pred = \
                 self.footstep_planner.footsteps_to_array(curr_horizon_init, curr_horizon_end, self.T_pred)
 
-            speed_ref_x_pred, speed_ref_y_pred = self.footstep_planner.speed_to_array(curr_horizon_init,
-                                                                                      curr_horizon_end, self.T_pred)
+            speed_ref_x_pred, speed_ref_y_pred = self.footstep_planner.speed_plan(curr_horizon_init,
+                                                                                  curr_horizon_end, self.T_pred)
+
+            assert(len(speed_ref_x_pred) == len(speed_ref_y_pred) == N)
 
             zk_ref_pred_x = (zk_min_x + zk_max_x) / 2
             zk_ref_pred_y = (zk_min_y + zk_max_y) / 2
@@ -137,8 +139,6 @@ class MPC:
             cop_x.append(np.array([1, 0, -self.robot.h / self.g]) @ next_x)
             cop_y.append(np.array([1, 0, -self.robot.h / self.g]) @ next_y)
 
-            # TODO: Comment this
-            #  DEBUG
             if self.debug:
                 if i % 5 == 0:
                     visuals.plot_intermediate_states(i, prev_x, prev_y, self.prediction_time, self.T_pred, T, jerk,

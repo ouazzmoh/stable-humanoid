@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List
+from typing import List, Tuple
 
 from step import Step
 from robot import Robot
@@ -41,10 +41,16 @@ class FootstepPlanner:
 
         # The reference speed of the robot
         # the speed attribute is in the form [(start_time, end_time, speed), ...]
-        self.speed_x = [(0, duration_double_init, 0), (duration_double_init, stop_at[0], average_speed[0]),
-                        (stop_at[0], simulation_time, 0)]
-        self.speed_y = [(0, duration_double_init, 0), (duration_double_init, stop_at[1], average_speed[1]),
-                        (stop_at[1], simulation_time, 0)]
+        if average_speed[0] > 0:
+            self.speed_x = [(0, duration_double_init, 0), (duration_double_init, stop_at[0], average_speed[0]),
+                            (stop_at[0], simulation_time, 0)]
+        else:
+            self.speed_x = [(0, simulation_time, 0)]
+        if average_speed[1] > 0:
+            self.speed_y = [(0, duration_double_init, 0), (duration_double_init, stop_at[1], average_speed[1]),
+                            (stop_at[1], simulation_time, 0)]
+        else:
+            self.speed_y = [(0, simulation_time, 0)]
 
     def footsteps_to_array(self,
                            from_time: float,
@@ -98,37 +104,44 @@ class FootstepPlanner:
 
         return np.array(zk_min_x), np.array(zk_max_x), np.array(zk_min_y), np.array(zk_max_y), np.array(theta)
 
-    def speed_to_array(self,
+    @staticmethod
+    def _speed_to_array(self,
+                       speed: List[Tuple[float, float, float]],
                        from_time: float,
                        to_time: float,
-                       T : float) -> (np.ndarray, np.ndarray):
+                       T : float) -> np.ndarray:
         # Detecting the index of the start and finish
         start_index, end_index = None, None
         start_step_percentage, end_step_percentage = None, None
-        speed_x, speed_y = None, None
-
-        for i in range(len(self.speed_x)):
-            if self.speed_x[i][0] <= from_time and self.speed_x[i][1] >= from_time:
+        speed_ret = []
+        for i in range(len(speed)):
+            start, end, val = speed[i][0], speed[i][1], speed[i][2]
+            if start <= from_time and end >= from_time:
                 start_index = i
-                start_step_percentage = (self.speed_x[i][1] - from_time) / (self.speed_x[i][1] - self.speed_x[i][0])
-            if self.speed_x[i][0] <= to_time and self.speed_x[i][1] >= to_time:
+                start_step_percentage = (end - from_time) / (end - start)
+            if start <= to_time and end >= to_time:
                 end_index = i
-                end_step_percentage = (to_time - self.speed_x[i][0]) / (self.speed_x[i][1] - self.speed_x[i][0])
+                end_step_percentage = (to_time - start) / (end - start)
 
         for k in range(start_index, end_index+1):
             if k == start_index:
-                speed_x = [self.speed_x[k][2]] * round((start_step_percentage*(self.speed_x[k][1] - self.speed_x[k][0]))/T)
-                speed_y = [self.speed_y[k][2]] * round((start_step_percentage*(self.speed_y[k][1] - self.speed_y[k][0]))/T)
+                speed_ret = [speed[k][2]] * round((start_step_percentage*(speed[k][1] - speed[k][0]))/T)
             elif k == end_index:
-                speed_x += [self.speed_x[k][2]] * round((end_step_percentage*(self.speed_x[k][1] - self.speed_x[k][0]))/T)
-                speed_y += [self.speed_y[k][2]] * round((end_step_percentage*(self.speed_y[k][1] - self.speed_y[k][0]))/T)
+                speed_ret += [speed[k][2]] * round((end_step_percentage*(speed[k][1] - speed[k][0]))/T)
             else:
-                speed_x += [self.speed_x[k][2]] * round((self.speed_x[k][1] - self.speed_x[k][0])/T)
-                speed_y += [self.speed_y[k][2]] * round((self.speed_y[k][1] - self.speed_y[k][0])/T)
+                speed_ret += [speed[k][2]] * round((speed[k][1] - speed[k][0])/T)
+
         # padding
-        speed_x += [speed_x[-1]]*(round((to_time-from_time)/T) - len(speed_x))
-        speed_y += [speed_y[-1]]*(round((to_time-from_time)/T) - len(speed_y))
-        return np.array(speed_x), np.array(speed_y)
+        speed_ret += [speed_ret[-1]]*(round((to_time-from_time)/T) - len(speed_ret))
+        return np.array(speed_ret)
+
+    def speed_plan(self,
+                   from_time: float,
+                   to_time: float,
+                   T : float ) -> (np.ndarray, np.ndarray):
+        speed_x = self._speed_to_array(self.speed_x, from_time, to_time, T)
+        speed_y = self._speed_to_array(self.speed_y, from_time, to_time, T)
+        return speed_x, speed_y
 
 
 
