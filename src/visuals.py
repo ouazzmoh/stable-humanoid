@@ -27,7 +27,7 @@ def plot_foot_steps(ax, zk_ref_x, zk_ref_y, theta_ref, foot_dimensions, spacing)
     plt.plot(steps_x, steps_y, 'go', label="ref_center")
     # Single supports
 
-    for x, y, angle in zip(steps_x[1:-1], steps_y[1:-1], theta[1:-1]):
+    for x, y, angle in zip(steps_x[1:], steps_y[1:], theta[1:]):
         # Create a rectangle
         rect = patches.Rectangle((x - foot_dimensions[0] / 2, y - foot_dimensions[1] / 2),
                                  foot_dimensions[0], foot_dimensions[1],
@@ -40,7 +40,8 @@ def plot_foot_steps(ax, zk_ref_x, zk_ref_y, theta_ref, foot_dimensions, spacing)
         # Add the rectangle to the plot
         ax.add_patch(rect)
     # Double supports
-    for x, y, angle in zip([steps_x[0], steps_x[-1]], [steps_y[0], steps_y[-1]], [theta[0], theta[-1]]):
+    # for x, y, angle in zip([steps_x[0], steps_x[-1]], [steps_y[0], steps_y[-1]], [theta[0], theta[-1]]):
+        x, y, angle = steps_x[0], steps_y[0], theta[0]
         rect1 = patches.Rectangle((x - foot_dimensions[0] / 2, y - foot_dimensions[1] - spacing/2),
                                   foot_dimensions[0], foot_dimensions[1],
                                   linewidth=0.7, edgecolor='grey', facecolor='none')
