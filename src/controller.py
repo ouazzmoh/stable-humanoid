@@ -20,7 +20,7 @@ class MPC:
                  xk_init: (float, float, float),
                  yk_init: (float, float, float),
                  solver: str = "quadprog",
-                 g : float = 9.81,
+                 g: float = 9.81,
                  debug: bool = False,
                  ) -> None:
         self.simulation_time = simulation_time
@@ -28,7 +28,15 @@ class MPC:
         self.T_control = T_control
         self.T_pred = T_pred
         self.robot = robot
+
+
+
+        # Padding the footsteps, to consider the last step's end time until the last prediction time
+        footstep_planner.extend_time(prediction_time)
         self.footstep_planner = footstep_planner
+
+
+
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
@@ -94,7 +102,7 @@ class MPC:
         T = self.T_pred
         for i in range(int(self.simulation_time / self.T_control)):
             # Get the current prediction horizon
-            curr_horizon_init, curr_horizon_end = i * self.prediction_time, (i+1)*self.prediction_time
+            curr_horizon_init, curr_horizon_end = i * self.T_control, i * self.T_control + self.prediction_time
             # TODO: Change the first T here
             zk_min_x, zk_max_x, zk_min_y, zk_max_y, theta_ref_pred = \
                 self.footstep_planner.footsteps_to_array(curr_horizon_init, curr_horizon_end, self.T_pred)
@@ -113,12 +121,19 @@ class MPC:
 
             G, h_cond = self.construct_constraints(T, theta_ref_pred, zk_ref_pred_x, zk_ref_pred_y, prev_x, prev_y)
 
+
             # Solve the QP
             jerk = solve_qp(P=Q, q=p, G=G, h=h_cond, solver=self.solver)
 
             if jerk is None:
-                print(f"Cannot solve the QP at iteration {i}, most likely the value of xk diverges")
+                print(f"Cannot solve the QP at iteration {i}")
                 return
+
+
+            #####################
+            # TODO: Akram, store the QP here : P is Q, q is p, G is G, h is h_cond, A is None, b is None
+
+            #####################
 
             # Choosing the proper time step
             if i > 0:

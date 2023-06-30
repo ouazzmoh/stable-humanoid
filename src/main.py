@@ -43,14 +43,9 @@ def moving_forward():
     plt.legend()
     plt.show()
     # Running the MPC
-
     controller = MPC(simulation_time, prediction_time, T_control, T_pred, robot, step_planner,
                      alpha, beta, gamma, xk_init, yk_init, debug=True)
 
-    # cop_x, com_x, cop_y, com_y = qp_speed(simulation_time, prediction_time, T_pred, T_control,
-    #                                       h, g, alpha, gamma, beta, xk_init, yk_init,
-    #                                       zk_ref_x, zk_ref_y, theta_ref, speed_ref_x,
-    #                                       speed_ref_y, foot_dimensions)
 
     cop_x, com_x, cop_y, com_y = controller.run_MPC()
 
@@ -61,7 +56,7 @@ def moving_forward():
     plt.plot(zk_min_x, linewidth=0.7)
     plt.plot(zk_max_x, linewidth=0.7)
     plt.title("x movement")
-    # plt.ylim(0,2)
+    plt.ylim(0,2)
     plt.legend()
     plt.show()
 
@@ -69,7 +64,7 @@ def moving_forward():
     plt.plot(com_y, label="com")
     plt.plot(zk_min_y, linewidth=0.7)
     plt.plot(zk_max_y, linewidth=0.7)
-    # plt.ylim((-0.8, 0.8))
+    plt.ylim((-0.8, 0.8))
     plt.title("y movement")
     plt.legend()
     plt.show()
@@ -83,7 +78,7 @@ def moving_forward():
     plt.legend()
     ax.set_xlabel("x(m)")
     ax.set_ylabel("y(m)")
-    # ax.set_ylim((-0.03, 0.03))
+    ax.set_ylim((-0.03, 0.03))
     plt.title("Trajectory of robot")
     plt.show()
 

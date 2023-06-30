@@ -5,8 +5,6 @@ from step import Step
 from robot import Robot
 import scenarios
 
-
-
 class FootstepPlanner:
     def __init__(self,
                  robot: Robot,
@@ -14,8 +12,8 @@ class FootstepPlanner:
                  duration_double_init: float,
                  duration_step: float,
                  trajectory_type: str,
-                 average_speed: (float, float) = (0, 1),
-                 stop_at: (float, float) = (0, 1)  # "forward", "upwards", "upwards_turning"
+                 average_speed: (float, float) = (0, 0),
+                 stop_at: (float, float) = (0, 0)  # "forward", "upwards", "upwards_turning"
                  ) -> None:
         self.robot = robot
         self.simulation_time = simulation_time
@@ -38,6 +36,7 @@ class FootstepPlanner:
                                                         self.robot.spacing_y)
 
         self.footsteps_x, self.footsteps_y = footsteps_x, footsteps_y
+        self.average_speed = average_speed
 
         # The reference speed of the robot
         # the speed attribute is in the form [(start_time, end_time, speed), ...]
@@ -51,6 +50,13 @@ class FootstepPlanner:
                             (stop_at[1], simulation_time, 0)]
         else:
             self.speed_y = [(0, simulation_time, 0)]
+
+
+
+    def extend_time(self, by_time: float) -> None:
+        self.footsteps_x[-1].end_time += by_time
+        self.footsteps_y[-1].end_time += by_time
+
 
     def footsteps_to_array(self,
                            from_time: float,
@@ -76,25 +82,39 @@ class FootstepPlanner:
                                                                                     self.footsteps_x[i].start_time)
 
         duration = self.footsteps_x[0].end_time - self.footsteps_x[0].start_time  # Duration of the step is constant in our implementation
-        for k in range(start_index, end_index+1):
-            if k == start_index:
-                zk_min_x = [self.footsteps_x[k].z_min] * round((start_step_percentage*duration)/T)
-                zk_max_x = [self.footsteps_x[k].z_max] * round((start_step_percentage*duration)/T)
-                zk_min_y = [self.footsteps_y[k].z_min] * round((start_step_percentage*duration)/T)
-                zk_max_y = [self.footsteps_y[k].z_max] * round((start_step_percentage*duration)/T)
-                theta = [self.footsteps_x[k].orientation] * round((start_step_percentage*duration)/T)
-            elif k == end_index:
-                zk_min_x += [self.footsteps_x[k].z_min] * round((end_step_percentage*duration)/T)
-                zk_max_x += [self.footsteps_x[k].z_max] * round((end_step_percentage*duration)/T)
-                zk_min_y += [self.footsteps_y[k].z_min] * round((end_step_percentage*duration)/T)
-                zk_max_y += [self.footsteps_y[k].z_max] * round((end_step_percentage*duration)/T)
-                theta += [self.footsteps_x[k].orientation] * round((end_step_percentage*duration)/T)
-            else:
-                zk_min_x += [self.footsteps_x[k].z_min] * round(duration/T)
-                zk_max_x += [self.footsteps_x[k].z_max] * round(duration/T)
-                zk_min_y += [self.footsteps_y[k].z_min] * round(duration/T)
-                zk_max_y += [self.footsteps_y[k].z_max] * round(duration/T)
-                theta += [self.footsteps_x[k].orientation] * round(duration/T)
+
+        if start_index is None:
+            zk_min_x = [self.footsteps_x[-1].z_min] * round(duration / T)
+            zk_max_x = [self.footsteps_x[-1].z_max] * round(duration / T)
+            zk_min_y = [self.footsteps_y[-1].z_min] * round(duration / T)
+            zk_max_y = [self.footsteps_y[-1].z_max] * round(duration / T)
+            theta = [self.footsteps_x[-1].orientation] * round(duration / T)
+        elif end_index is None or end_index == start_index:
+            zk_min_x = [self.footsteps_x[start_index].z_min] * round(duration/T)
+            zk_max_x = [self.footsteps_x[start_index].z_max] * round(duration/T)
+            zk_min_y = [self.footsteps_y[start_index].z_min] * round(duration/T)
+            zk_max_y = [self.footsteps_y[start_index].z_max] * round(duration/T)
+            theta = [self.footsteps_x[start_index].orientation] * round(duration/T)
+        else:
+            for k in range(start_index, end_index+1):
+                if k == start_index:
+                    zk_min_x = [self.footsteps_x[k].z_min] * round((start_step_percentage*duration)/T)
+                    zk_max_x = [self.footsteps_x[k].z_max] * round((start_step_percentage*duration)/T)
+                    zk_min_y = [self.footsteps_y[k].z_min] * round((start_step_percentage*duration)/T)
+                    zk_max_y = [self.footsteps_y[k].z_max] * round((start_step_percentage*duration)/T)
+                    theta = [self.footsteps_x[k].orientation] * round((start_step_percentage*duration)/T)
+                elif k == end_index:
+                    zk_min_x += [self.footsteps_x[k].z_min] * round((end_step_percentage*duration)/T)
+                    zk_max_x += [self.footsteps_x[k].z_max] * round((end_step_percentage*duration)/T)
+                    zk_min_y += [self.footsteps_y[k].z_min] * round((end_step_percentage*duration)/T)
+                    zk_max_y += [self.footsteps_y[k].z_max] * round((end_step_percentage*duration)/T)
+                    theta += [self.footsteps_x[k].orientation] * round((end_step_percentage*duration)/T)
+                else:
+                    zk_min_x += [self.footsteps_x[k].z_min] * round(duration/T)
+                    zk_max_x += [self.footsteps_x[k].z_max] * round(duration/T)
+                    zk_min_y += [self.footsteps_y[k].z_min] * round(duration/T)
+                    zk_max_y += [self.footsteps_y[k].z_max] * round(duration/T)
+                    theta += [self.footsteps_x[k].orientation] * round(duration/T)
         # padding
         zk_min_x += [zk_min_x[-1]]*(round((to_time-from_time)/T) - len(zk_min_x))
         zk_max_x += [zk_max_x[-1]]*(round((to_time-from_time)/T) - len(zk_max_x))
@@ -105,8 +125,7 @@ class FootstepPlanner:
         return np.array(zk_min_x), np.array(zk_max_x), np.array(zk_min_y), np.array(zk_max_y), np.array(theta)
 
     @staticmethod
-    def _speed_to_array(self,
-                       speed: List[Tuple[float, float, float]],
+    def _speed_to_array(speed: List[Tuple[float, float, float]],
                        from_time: float,
                        to_time: float,
                        T : float) -> np.ndarray:
@@ -116,31 +135,44 @@ class FootstepPlanner:
         speed_ret = []
         for i in range(len(speed)):
             start, end, val = speed[i][0], speed[i][1], speed[i][2]
-            if start <= from_time and end >= from_time:
+            if start <= from_time <= end:
                 start_index = i
                 start_step_percentage = (end - from_time) / (end - start)
-            if start <= to_time and end >= to_time:
+            if start <= to_time <= end:
                 end_index = i
                 end_step_percentage = (to_time - start) / (end - start)
 
-        for k in range(start_index, end_index+1):
-            if k == start_index:
-                speed_ret = [speed[k][2]] * round((start_step_percentage*(speed[k][1] - speed[k][0]))/T)
-            elif k == end_index:
-                speed_ret += [speed[k][2]] * round((end_step_percentage*(speed[k][1] - speed[k][0]))/T)
-            else:
-                speed_ret += [speed[k][2]] * round((speed[k][1] - speed[k][0])/T)
+        if start_index is None:
+            return np.array([speed[-1][2]]*round((to_time-from_time)/T))
+        elif end_index is None or start_index == end_index:
+            return np.array([speed[start_index][2]]*round((to_time-from_time)/T))
+        else:
+            for k in range(start_index, end_index+1):
+                if k == start_index:
+                    speed_ret = [speed[k][2]] * round((start_step_percentage*(speed[k][1] - speed[k][0]))/T)
+                elif k == end_index:
+                    speed_ret += [speed[k][2]] * round((end_step_percentage*(speed[k][1] - speed[k][0]))/T)
+                else:
+                    speed_ret += [speed[k][2]] * round((speed[k][1] - speed[k][0])/T)
 
-        # padding
-        speed_ret += [speed_ret[-1]]*(round((to_time-from_time)/T) - len(speed_ret))
+            # padding
+            speed_ret += [speed_ret[-1]]*(round((to_time-from_time)/T) - len(speed_ret))
         return np.array(speed_ret)
 
     def speed_plan(self,
                    from_time: float,
                    to_time: float,
                    T : float ) -> (np.ndarray, np.ndarray):
-        speed_x = self._speed_to_array(self.speed_x, from_time, to_time, T)
-        speed_y = self._speed_to_array(self.speed_y, from_time, to_time, T)
+        speed_x, speed_y = None, None
+        if self.average_speed[0] == 0:
+            speed_x = np.zeros(round((to_time-from_time)/T))
+        else:
+            speed_x = self._speed_to_array(self.speed_x, from_time, to_time, T)
+
+        if self.average_speed[1] == 0:
+            speed_y = np.zeros(round((to_time-from_time)/T))
+        else:
+            speed_y = self._speed_to_array(self.speed_y, from_time, to_time, T)
         return speed_x, speed_y
 
 
