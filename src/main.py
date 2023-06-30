@@ -7,7 +7,7 @@ from controller import MPC
 
 
 T_pred = 100e-3  # (s)
-T_control = 100e-3  # (s)
+T_control = 25e-3  # (s)
 simulation_time = 10  # (s)
 prediction_time = 2  # (s)
 g = 9.81
@@ -44,7 +44,7 @@ def moving_forward():
     plt.show()
     # Running the MPC
     controller = MPC(simulation_time, prediction_time, T_control, T_pred, robot, step_planner,
-                     alpha, beta, gamma, xk_init, yk_init)
+                     alpha, beta, gamma, xk_init, yk_init, debug=False)
 
 
     cop_x, com_x, cop_y, com_y = controller.run_MPC()

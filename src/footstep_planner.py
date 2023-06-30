@@ -117,10 +117,15 @@ class FootstepPlanner:
                     theta += [self.footsteps_x[k].orientation] * round(duration/T)
         # padding
         zk_min_x += [zk_min_x[-1]]*(round((to_time-from_time)/T) - len(zk_min_x))
+        zk_min_x = zk_min_x[:round((to_time-from_time)/T)]
         zk_max_x += [zk_max_x[-1]]*(round((to_time-from_time)/T) - len(zk_max_x))
+        zk_max_x = zk_max_x[:round((to_time-from_time)/T)]
         zk_min_y += [zk_min_y[-1]]*(round((to_time-from_time)/T) - len(zk_min_y))
+        zk_min_y = zk_min_y[:round((to_time-from_time)/T)]
         zk_max_y += [zk_max_y[-1]]*(round((to_time-from_time)/T) - len(zk_max_y))
+        zk_max_y = zk_max_y[:round((to_time-from_time)/T)]
         theta += [theta[-1]]*(round((to_time-from_time)/T) - len(theta))
+        theta = theta[:round((to_time-from_time)/T)]
 
         return np.array(zk_min_x), np.array(zk_max_x), np.array(zk_min_y), np.array(zk_max_y), np.array(theta)
 
@@ -157,7 +162,7 @@ class FootstepPlanner:
 
             # padding
             speed_ret += [speed_ret[-1]]*(round((to_time-from_time)/T) - len(speed_ret))
-        return np.array(speed_ret)
+        return np.array(speed_ret[0:round((to_time-from_time)/T)])
 
     def speed_plan(self,
                    from_time: float,

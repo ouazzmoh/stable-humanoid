@@ -136,7 +136,7 @@ def plot_intermediate_states(i, prev_x, prev_y, prediction_time, T_pred, T, jerk
         # jerk_x.append(jerks[k])
     _, ax = plt.subplots()
     ax.plot(cop_x_s, cop_y_s, color="green")
-    ax.plot(com_x_s, com_y_s, color="red")
+    # ax.plot(com_x_s, com_y_s, color="red")
     ax.plot(cop_x_s[0], cop_y_s[0], "ro", label="cop_sol_init")
     ax.plot(cop_x_s[-1], cop_y_s[-1], "bo", label="cop_sol_end")
     plot_foot_steps_single(ax, zk_ref_pred_x, zk_ref_pred_y,
