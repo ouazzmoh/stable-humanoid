@@ -1,9 +1,9 @@
-import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
-from simulations import *
-import numpy as np
+from typing import List
 
+
+from simulations import *
 
 def plot_foot_steps(ax, zk_ref_x, zk_ref_y, theta_ref, foot_dimensions, spacing) -> None:
     """
@@ -145,3 +145,49 @@ def plot_intermediate_states(i, prev_x, prev_y, prediction_time, T_pred, T, jerk
     # plt.ylim((-0.6, 0.6))
     plt.legend()
     plt.show()
+
+
+def plot_results(cop_x: np.ndarray,
+                 com_x: np.ndarray,
+                 cop_y: np.ndarray,
+                 com_y: np.ndarray,
+                 zk_min_x: np.ndarray,
+                 zk_max_x: np.ndarray,
+                 zk_min_y: np.ndarray,
+                 zk_max_y: np.ndarray,
+                 theta_ref: np.ndarray,
+                 foot_dimensions: List[float],
+                 spacing: float
+                 ) -> None:
+    plt.plot(cop_x, label="cop")
+    plt.plot(com_x, label="com")
+    plt.plot(zk_min_x, linewidth=0.7)
+    plt.plot(zk_max_x, linewidth=0.7)
+    plt.title("x movement")
+    # plt.ylim(0,2)
+    plt.legend()
+    plt.show()
+
+    plt.plot(cop_y, label="cop")
+    plt.plot(com_y, label="com")
+    plt.plot(zk_min_y, linewidth=0.7)
+    plt.plot(zk_max_y, linewidth=0.7)
+    # plt.ylim((-0.8, 0.8))
+    plt.title("y movement")
+    plt.legend()
+    plt.show()
+
+    fig, ax = plt.subplots()
+    ax.plot(cop_x, cop_y, label="cop", color="green")
+    ax.plot(com_x, com_y, label="com", color="red")
+    # Plot footsteps
+    plot_foot_steps(ax, (zk_min_x+zk_max_x)/2, (zk_min_y+zk_max_y)/2, theta_ref, foot_dimensions, spacing)
+    # Display the plot
+    plt.legend()
+    ax.set_xlabel("x(m)")
+    ax.set_ylabel("y(m)")
+    # ax.set_ylim((-0.03, 0.03))
+    plt.title("Trajectory of robot")
+    plt.show()
+
+
