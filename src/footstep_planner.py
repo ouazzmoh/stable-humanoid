@@ -35,7 +35,7 @@ class FootstepPlanner:
                                                             self.robot.foot_dimensions[1],
                                                             self.robot.spacing_y)
 
-        if self.trajectory_type == "upwards":
+        elif self.trajectory_type == "upwards":
             footsteps_x = scenarios.construct_zmin_zmax_forward(self.simulation_time,
                                                                 self.duration_double_init,
                                                                 self.duration_step,
@@ -46,12 +46,36 @@ class FootstepPlanner:
                                                                     self.duration_step,
                                                                     self.robot.foot_dimensions[1],
                                                                     self.robot.spacing_y,
-                                                                    0.35)
-
-            assert(len(footsteps_x) == len(footsteps_y))
+                                                                    shift=0.35)
+            # Changing the orientation for the feet
+            assert (len(footsteps_x) == len(footsteps_y))
             for i in range(len(footsteps_x)):
-                footsteps_x[i].orientation = np.pi/4
-                footsteps_y[i].orientation = np.pi/4
+                footsteps_x[i].orientation = np.pi / 4
+                footsteps_y[i].orientation = np.pi / 4
+
+        elif self.trajectory_type == "upwards_turning":
+            footsteps_x = scenarios.construct_zmin_zmax_forward_backwards(self.simulation_time,
+                                                                          self.duration_double_init,
+                                                                          self.duration_step,
+                                                                          self.robot.foot_dimensions[0],
+                                                                          self.robot.spacing_x)
+            footsteps_y = scenarios.construct_zmin_zmax_alt_forward(self.simulation_time,
+                                                                    self.duration_double_init,
+                                                                    self.duration_step,
+                                                                    self.robot.foot_dimensions[1],
+                                                                    self.robot.spacing_y,
+                                                                    shift=0.35)
+            footsteps_y.append(footsteps_y[-1])
+            assert (len(footsteps_x) == len(footsteps_y))
+            for i in range(int(len(footsteps_x)*0.5)):
+                footsteps_x[i].orientation = np.pi / 4
+                footsteps_y[i].orientation = np.pi / 4
+            for i in range(int(len(footsteps_x) * 0.5), len(footsteps_x)):
+                footsteps_x[i].orientation = np.pi / 4 + np.pi/2
+                footsteps_y[i].orientation = np.pi / 4 + np.pi/2
+        else:
+            raise ValueError("Invalid trajectory type: the available scenarios are 'forward', 'upwards', "
+                             "'upwards_turning'")
 
         self.footsteps_x, self.footsteps_y = footsteps_x, footsteps_y
         self.average_speed = average_speed
