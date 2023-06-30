@@ -25,12 +25,12 @@ To run the MPC for a specific scenario, run the following command:
 
 <table>
   <tr>
-    <td><img src="./plots/forward1" alt="Moving Forward 1" width="200"/></td>
-    <td><img src="./plots/forward2" alt="Moving Forward 2" width="200"/></td>
+    <td><img src="./plots/forward1" alt="Moving Forward 1" width="400"/></td>
+    <td><img src="./plots/forward2" alt="Moving Forward 2" width="400"/></td>
   </tr>
   <tr>
-    <td><img src="./plots/forward3" alt="Moving Forward 3" width="200"/></td>
-    <td><img src="./plots/forward4" alt="Moving Forward 4" width="200"/></td>
+    <td><img src="./plots/forward3" alt="Moving Forward 3" width="400"/></td>
+    <td><img src="./plots/forward4" alt="Moving Forward 4" width="400"/></td>
   </tr>
 </table>
 
@@ -38,11 +38,11 @@ To run the MPC for a specific scenario, run the following command:
 
 <table>
   <tr>
-    <td><img src="./plots/upwards1" alt="Moving Forward 1" width="200"/></td>
-    <td><img src="./plots/upwards2" alt="Moving Forward 2" width="200"/></td>
+    <td><img src="./plots/upwards1" alt="Moving Forward 1" width="400"/></td>
+    <td><img src="./plots/upwards2" alt="Moving Forward 2" width="400"/></td>
   </tr>
   <tr>
-    <td><img src="./plots/upwards3" alt="Moving Forward 3" width="200"/></td>
-    <td><img src="./plots/upwards4" alt="Moving Forward 4" width="200"/></td>
+    <td><img src="./plots/upwards3" alt="Moving Forward 3" width="400"/></td>
+    <td><img src="./plots/upwards4" alt="Moving Forward 4" width="400"/></td>
   </tr>
 </table>
