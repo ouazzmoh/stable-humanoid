@@ -9,7 +9,7 @@ from controller import MPC
 
 
 T_pred = 100e-3  # (s)
-T_control = 100e-3  # (s)
+T_control = 5e-3  # (s)
 simulation_time = 10  # (s)
 prediction_time = 2  # (s)
 g = 9.81
@@ -92,8 +92,9 @@ def move(trajectory_type, debug=False):
 
 
 def main():
-    trajectory_type = input("Enter trajectory type: ")
-    move(trajectory_type, debug=False)
+    # trajectory_type = input("Enter trajectory type: ")
+    trajectory_type = "forward"
+    move(trajectory_type, debug=True)
 
 
 if __name__ == "__main__":

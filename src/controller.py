@@ -1,9 +1,11 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from robot import Robot
 from footstep_planner import FootstepPlanner
 from utils import *
 import visuals
+from typing import Tuple
 
 
 class MPC:
@@ -53,7 +55,7 @@ class MPC:
                             speed_ref_x_pred : np.ndarray,
                             speed_ref_y_pred : np.ndarray,
                             prev_x : np.ndarray,
-                            prev_y : np.ndarray) -> (np.ndarray, np.ndarray):
+                            prev_y : np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         # Construct the objective function
         # Problem matrices
         N = int(self.prediction_time / self.T_pred)
@@ -76,7 +78,7 @@ class MPC:
                               zk_ref_pred_x : np.ndarray,
                               zk_ref_pred_y : np.ndarray,
                               prev_x : np.ndarray,
-                              prev_y : np.ndarray) -> (np.ndarray, np.ndarray):
+                              prev_y : np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         # Construct the constraints
         N = int(self.prediction_time / self.T_pred)
         foot_dimensions = self.robot.foot_dimensions
@@ -89,7 +91,7 @@ class MPC:
         h_cond = b + D @ np.hstack((zk_ref_pred_x - Pzs @ prev_x, zk_ref_pred_y - Pzs @ prev_y))
         return G, h_cond
 
-    def run_MPC(self) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    def run_MPC(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         # Outputs
         com_x, com_y = [], []
         com_velocity_x, com_velocity_y = [], []
@@ -99,7 +101,7 @@ class MPC:
         N = int(self.prediction_time / self.T_pred)
 
         # Run the simulation
-        T = self.T_pred
+        T = self.T_pred #Used for intermediate visualization
         for i in range(int(self.simulation_time / self.T_control)):
             # Get the current prediction horizon
             curr_horizon_init, curr_horizon_end = i * self.T_control, i * self.T_control + self.prediction_time
@@ -116,10 +118,11 @@ class MPC:
             zk_ref_pred_y = (zk_min_y + zk_max_y) / 2
 
             # Construct the objective function
-            Q, p = self.construct_objective(T, zk_ref_pred_x, zk_ref_pred_y,
+            Q, p = self.construct_objective(self.T_pred, zk_ref_pred_x, zk_ref_pred_y,
                                             speed_ref_x_pred, speed_ref_y_pred, prev_x, prev_y)
 
-            G, h_cond = self.construct_constraints(T, theta_ref_pred, zk_ref_pred_x, zk_ref_pred_y, prev_x, prev_y)
+            G, h_cond = self.construct_constraints(self.T_pred, theta_ref_pred, zk_ref_pred_x, zk_ref_pred_y,
+                                                   prev_x, prev_y)
 
 
             # Solve the QP
@@ -135,16 +138,10 @@ class MPC:
 
             #####################
 
-            # Choosing the proper time step
-            if i > 0:
-                T -= (i % int(self.T_pred / self.T_control)) * self.T_control
-            if T <= 0:
-                T = self.T_pred
-
             # Compute the next state
-
-            next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T), \
-                             next_com(jerk=jerk[N], previous=prev_y, t_step=T)
+            # We integrate using the control time step
+            next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=self.T_control), \
+                             next_com(jerk=jerk[N], previous=prev_y, t_step=self.T_control)
             com_x.append(next_x[0])
             com_y.append(next_y[0])
             com_velocity_x.append(next_x[1])
@@ -154,15 +151,18 @@ class MPC:
             cop_x.append(np.array([1, 0, -self.robot.h / self.g]) @ next_x)
             cop_y.append(np.array([1, 0, -self.robot.h / self.g]) @ next_y)
 
+            num_frames = 10
             if self.debug:
-                if i % 5 == 0:
+                if i % (int(self.simulation_time / self.T_control) // num_frames) == 0:
                     visuals.plot_intermediate_states(i, prev_x, prev_y, self.prediction_time, self.T_pred, T, jerk,
                                                      self.robot.h, self.g, N, zk_ref_pred_x,
                                                      zk_ref_pred_y, theta_ref_pred, self.robot.foot_dimensions)
-
+            T -= self.T_control
+            if T <= 0:
+                T = self.T_pred
             # Update the status of the position
             prev_x, prev_y = next_x, next_y
 
-        return cop_x, com_x, cop_y, com_y
+        return np.array(cop_x), np.array(com_x), np.array(cop_y), np.array(com_y)
 
 
