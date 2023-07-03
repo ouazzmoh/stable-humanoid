@@ -151,15 +151,15 @@ class MPC:
             cop_x.append(np.array([1, 0, -self.robot.h / self.g]) @ next_x)
             cop_y.append(np.array([1, 0, -self.robot.h / self.g]) @ next_y)
 
-            num_frames = 10
             if self.debug:
+                num_frames = 10  # Number of frames to plot
                 if i % (int(self.simulation_time / self.T_control) // num_frames) == 0:
                     visuals.plot_intermediate_states(i, prev_x, prev_y, self.prediction_time, self.T_pred, T, jerk,
                                                      self.robot.h, self.g, N, zk_ref_pred_x,
                                                      zk_ref_pred_y, theta_ref_pred, self.robot.foot_dimensions)
-            T -= self.T_control
-            if T <= 0:
-                T = self.T_pred
+                T -= self.T_control
+                if T <= 0:
+                    T = self.T_pred
             # Update the status of the position
             prev_x, prev_y = next_x, next_y
 

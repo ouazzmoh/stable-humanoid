@@ -94,7 +94,7 @@ def move(trajectory_type, debug=False):
 def main():
     # trajectory_type = input("Enter trajectory type: ")
     trajectory_type = "forward"
-    move(trajectory_type, debug=True)
+    move(trajectory_type)
 
 
 if __name__ == "__main__":
