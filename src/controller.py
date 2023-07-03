@@ -1,8 +1,9 @@
 from robot import Robot
+from perturbation import Perturbation
 from footstep_planner import FootstepPlanner
 from utils import *
 import visuals
-from typing import Tuple
+from typing import Tuple, List
 
 
 class MPC:
@@ -23,6 +24,7 @@ class MPC:
                  solver: str = "quadprog",
                  g: float = 9.81,
                  debug: bool = False,
+                 perturbations: List[Perturbation] = None,
                  ) -> None:
         self.simulation_time = simulation_time
         self.prediction_time = prediction_time
@@ -48,6 +50,7 @@ class MPC:
         self.solver = solver
         self.g = g
         self.debug = debug
+        self.perturbations = perturbations
 
     def construct_objective(self,
                             T : float,
@@ -171,10 +174,17 @@ class MPC:
                 T -= self.T_control
                 if T <= 0:
                     T = self.T_pred
+
+            if self.perturbations:
+                for perturb in self.perturbations:
+                    if abs(perturb.time - i * self.T_control) <= self.T_control:
+                        next_x[2] += perturb.value_x
+                        next_y[2] += perturb.value_y
+
             # Update the status of the position
             prev_x, prev_y = next_x, next_y
 
-        if self.write_hdf5 : file.close()
+        if self.write_hdf5: file.close()
         return np.array(cop_x), np.array(com_x), np.array(cop_y), np.array(com_y)
 
 
