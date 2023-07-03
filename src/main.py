@@ -20,9 +20,9 @@ spacing = (0.1, 0.4)  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 0.8  # (s)
 steps = int(simulation_time / T_control)
-alpha = 1  # Weight for jerk
+alpha = 1e-3  # Weight for jerk
 gamma = 1  # Weight for zk_ref
-beta = 1   # Weight for velocity
+beta = 1e-3   # Weight for velocity
 average_speed = (0.3, 0)
 stop_at = (8, 10)  # (s)
 

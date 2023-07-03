@@ -240,6 +240,7 @@ def construct_zmin_zmax_interactive(x_axis: Tuple,
     ax.set_ylabel('y')
 
     # Display the plot
+    plt.grid()
     plt.show()
 
     zk_min_x = np.array(zk_ref_x_interactive) - foot_dimensions[0]/2 - spacing[0]/2
