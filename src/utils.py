@@ -631,7 +631,7 @@ def construct_zmin_zmax_moving2(steps, duration_double_init, duration_step,
 def get_file_path(filename):
     current_dir = os.path.dirname(os.path.abspath(__file__))
     file = filename if filename.endswith(".hdf5") else f"{filename}.hdf5"
-    file_path = os.path.join(current_dir, "..", "data", file)
+    file_path = os.path.join(current_dir, "../data", file)
     if os.path.exists(file_path):
         return file_path
     with h5.File(file_path, "w") as file:
@@ -672,7 +672,8 @@ def store_qp_in_file(file :h5._hl.files.File, t: float, iter: int, **kwargs):
                                             dtype=data.dtype,
                                             chunks=True,
                                             compression="gzip")
-            
+
+
 def retrieve_problem_data_from_file(file: h5._hl.files.File, iter: int):
     """retrieves the qp problem from the given file
 
@@ -695,5 +696,5 @@ def retrieve_problem_data_from_file(file: h5._hl.files.File, iter: int):
     group = group[f"qp_{iter:04}"]
     for data_name in list(group.keys()):
         if f"{data_name}/data" in group:
-                qp_data[data_name] = group[f"{data_name}/data"][:]
+            qp_data[data_name] = group[f"{data_name}/data"][:]
     return qp_data

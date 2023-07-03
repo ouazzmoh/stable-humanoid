@@ -28,7 +28,7 @@ stop_at = (8, 10)  # (s)
 robot = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1])
 
 
-def move(trajectory_type, debug=False):
+def move(trajectory_type, debug=False, store=False):
     # Problem variables
     xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
@@ -51,7 +51,7 @@ def move(trajectory_type, debug=False):
     plt.show()
     # Running the MPC
     controller = MPC(simulation_time, prediction_time, T_control, T_pred, robot, step_planner,
-                     alpha, beta, gamma, xk_init, yk_init, write_hdf5=True, debug=debug)
+                     alpha, beta, gamma, xk_init, yk_init, write_hdf5=store, debug=debug)
     cop_x, com_x, cop_y, com_y = controller.run_MPC()
 
     # Plot the results
