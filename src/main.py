@@ -51,7 +51,7 @@ def move(trajectory_type, debug=False):
     plt.show()
     # Running the MPC
     controller = MPC(simulation_time, prediction_time, T_control, T_pred, robot, step_planner,
-                     alpha, beta, gamma, xk_init, yk_init, debug=debug)
+                     alpha, beta, gamma, xk_init, yk_init, write_hdf5=True, debug=debug)
     cop_x, com_x, cop_y, com_y = controller.run_MPC()
 
     # Plot the results

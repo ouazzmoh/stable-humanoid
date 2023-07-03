@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import h5py as h5
 from qpsolvers import solve_qp
 
 
@@ -626,4 +628,72 @@ def construct_zmin_zmax_moving2(steps, duration_double_init, duration_step,
 
     return np.array(zk_min), np.array(zk_max)
 
+def get_file_path(filename):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file = filename if filename.endswith(".hdf5") else f"{filename}.hdf5"
+    file_path = os.path.join(current_dir, "..", "data", file)
+    if os.path.exists(file_path):
+        return file_path
+    with h5.File(file_path, "w") as file:
+        file.attrs["title"] = "sequence of walking MPC qp problems"
+    return file_path
 
+def store_qp_in_file(file :h5._hl.files.File, t: float, iter: int, **kwargs):
+    """Stores the qp problem matrices in the given file.
+
+    Args:
+        file (h5._hl.files.File): _description_
+        t (float): time in seconds
+        iter (int): will be used to name the qp problem in the file
+    """
+    if "walking_MPC" not in file:
+        file.create_group("walking_MPC")
+    group = file["walking_MPC"]
+    if f"qp_{iter:04}" not in group:
+        group.create_group(f"qp_{iter:04}")
+    group = group[f"qp_{iter:04}"]
+    group.attrs["time"] = t
+    for data_name, data in kwargs.items():
+        if f"{data_name}" not in group:
+            group.create_group(f"{data_name}")
+        # data = kwargs[data_name]
+        if f"{data_name}/data" not in group:
+            group[data_name].create_dataset("data", 
+                                            data=data,
+                                            shape=data.shape,
+                                            dtype=data.dtype,
+                                            chunks=True,
+                                            compression="gzip")
+        else: #overwrite
+            del group[f"{data_name}/data"]
+            group[data_name].create_dataset("data", 
+                                            data=data,
+                                            shape=data.shape,
+                                            dtype=data.dtype,
+                                            chunks=True,
+                                            compression="gzip")
+            
+def retrieve_problem_data_from_file(file: h5._hl.files.File, iter: int):
+    """retrieves the qp problem from the given file
+
+    Args:
+        file: the hdf5 file to retrieve the problem from
+        iter: 
+
+    Raises:
+        ValueError: if the problem was not found in the file
+
+    Returns:
+        dict: dictionnary that contains the problem data
+    """
+    qp_data = {}
+    if "walking_MPC" not in file:
+        raise ValueError("Problem not found")
+    group = file["walking_MPC"]
+    if f"qp_{iter:04}" not in group:
+        raise ValueError("Problem not found")
+    group = group[f"qp_{iter:04}"]
+    for data_name in list(group.keys()):
+        if f"{data_name}/data" in group:
+                qp_data[data_name] = group[f"{data_name}/data"][:]
+    return qp_data
