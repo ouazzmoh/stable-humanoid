@@ -1,7 +1,7 @@
 from utils import *
 import matplotlib.pyplot as plt
 import visuals
-
+from collections import Counter
 
 def simulation_with_feedback(t_step, steps, g, h_com, r_q, xk_init, zk_min, zk_max):
     # zk_min, zk_max = construct_zmin_zmax(steps=steps, duration_double_init=0.26, duration_left=0.07,
@@ -337,6 +337,128 @@ def qp_speed(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, g
         cop_x.append(np.array([1, 0, -h / g]) @ next_x)
         cop_y.append(np.array([1, 0, -h / g]) @ next_y)
 
+        # TODO: Comment this
+        #  DEBUG
+        if i % 5 == 0:
+            visuals.plot_intermediate_states(i, prev_x, prev_y, prediction_time, T_pred, T, jerk,
+                                             h, g, N, zk_ref_pred_x,
+                                             zk_ref_pred_y, theta_ref_pred, foot_dimensions)
+
+        # Update the status of the position
+        prev_x, prev_y = next_x, next_y
+
+    return cop_x, com_x, cop_y, com_y
+
+
+
+def qp_speed_adapting(simulation_time, prediction_time, T_pred, T_control, h, g, alpha, gamma, beta, xk_init, yk_init,
+                          zk_ref_x, zk_ref_y, theta_ref, speed_ref_x, speed_ref_y, foot_dimensions):
+    # Problem matrices
+    N = int(prediction_time / T_pred)
+    Pvu = p_v_u_matrix(T_pred, N)
+    Pvs = p_v_s_matrix(T_pred, N)
+    Pzu = p_z_u_matrix(T_pred, h, g, N)
+    Pzs = p_z_s_matrix(T_pred, h, g, N)
+
+
+    # Outputs
+    com_x, com_y = [], []
+    com_velocity_x, com_velocity_y = [], []
+    com_acceleration_x, com_acceleration_y = [], []
+    cop_x, cop_y = [], []
+    prev_x, prev_y = xk_init, yk_init
+
+    curr_cop = (np.array([1, 0, -h / g])@xk_init, np.array([1, 0, -h / g])@yk_init)
+
+    # Padding: To avoid that the last window lacks elements
+    zk_ref_x = np.array(list(zk_ref_x) + [zk_ref_x[-1]] * int(prediction_time / T_control))
+    zk_ref_y = np.array(list(zk_ref_y) + [zk_ref_y[-1]] * int(prediction_time / T_control))
+    theta_ref = np.array(list(theta_ref) + [theta_ref[-1]] * int(prediction_time / T_control))
+    speed_ref_y = np.array(list(speed_ref_y) + [speed_ref_y[-1]] * int(prediction_time / T_control))
+    speed_ref_x = np.array(list(speed_ref_x) + [speed_ref_x[-1]] * int(prediction_time / T_control))
+
+    # Run the simulation
+    T = T_pred
+    for i in range(int(simulation_time / T_control)):
+        # Get the current prediction horizon
+        zk_ref_pred_x = zk_ref_x[i:i + int(prediction_time / T_control)]
+        zk_ref_pred_x = zk_ref_pred_x[::int(T_pred / T_control)]  # Down sampling
+        assert (len(zk_ref_pred_x) == N)
+
+        zk_ref_pred_y = zk_ref_y[i:i + int(prediction_time / T_control)]
+        zk_ref_pred_y = zk_ref_pred_y[::int(T_pred / T_control)]  # Down sampling
+        assert (len(zk_ref_pred_y) == N)
+
+        theta_ref_pred = theta_ref[i:i + int(prediction_time / T_control)]
+        theta_ref_pred = theta_ref_pred[::int(T_pred / T_control)]  # Down sampling
+        assert (len(theta_ref_pred) == N)
+
+        speed_ref_x_pred = speed_ref_x[i:i + int(prediction_time / T_control)]
+        speed_ref_x_pred = speed_ref_x_pred[::int(T_pred / T_control)]  # Down sampling
+        assert (len(speed_ref_x_pred) == N)
+
+        speed_ref_y_pred = speed_ref_y[i:i + int(prediction_time / T_control)]
+        speed_ref_y_pred = speed_ref_y_pred[::int(T_pred / T_control)]  # Down sampling
+        assert (len(speed_ref_y_pred) == N)
+
+        # Get unique steps
+
+        points = np.array([zk_ref_pred_x, zk_ref_pred_y]).T
+        # Get unique rows,
+        _, idx = np.unique(points, axis=0, return_index=True)
+        unique_points = points[np.sort(idx)]
+        # Store the unique steps in order
+        steps_x, steps_y = unique_points[:, 0], unique_points[:, 1]
+        # Store the occurence of the steps
+        occ = Counter(list(zip(zk_ref_pred_x, zk_ref_pred_y)))
+        # The U matrix allows us to choose which footstep at which instant
+        U = u_matrix(N, steps_x, steps_y, occ)
+
+        Uck = U[:, 0]
+        Uk = U[:, 1:]
+
+        # Using U in the Problem: The Uck chooses the current step and the Uk chooses the next steps
+        zk_ref_pred_x = Uck * curr_cop[0] + Uk @ steps_x[1:]
+        zk_ref_pred_y = Uck * curr_cop[1] + Uk @ steps_y[1:]
+
+        # Solve the optimization problem ove the current prediction horizon
+        Qprime = np.block([[beta * Pvu.T @ Pvu + alpha * np.eye(N) + gamma * Pzu.T @ Pzu, - gamma * Pzu.T @ Uk],
+                          [-gamma * Uk.T @ Pzu, gamma * Uk.T @ Uk]])
+        Q = np.block([[Qprime, np.zeros(shape=(N + Uk.shape[1], N+Uk.shape[1]))],
+                      [np.zeros(shape=(N+Uk.shape[1], N+Uk.shape[1])), Qprime]])
+        p = np.hstack((beta * Pvu.T @ (Pvs @ prev_x - speed_ref_x_pred) + gamma*Pzu.T @ (Pzs @ prev_x - Uck*curr_cop[0]),
+                      - gamma * Uk.T @ (Pzs @ prev_x - Uck * curr_cop[0]),
+                      beta * Pvu.T @ (Pvs @ prev_y - speed_ref_y_pred) + gamma*Pzu.T @ (Pzs @ prev_y - Uck*curr_cop[1]),
+                      -gamma * Uk.T @ (Pzs @ prev_y - Uck * curr_cop[1])))
+
+        D = Dk_matrix(N, theta_ref_pred)
+        b = np.array(
+            [foot_dimensions[0] / 2, foot_dimensions[0] / 2, foot_dimensions[1] / 2, foot_dimensions[1] / 2] * N)
+        G = D @ np.block([[Pzu, - Uk, np.zeros(shape=(N, N)), np.zeros(shape=(N, N))],
+                          [np.zeros(shape=(N, N)), np.zeros(shape=(N, N)), Pzu, - Uk]])
+        h_cond = b + D @ np.hstack((Uck*curr_cop[0] - Pzs @ prev_x, Uck*curr_cop[1] - Pzs @ prev_y))
+
+        jerk = solve_qp(P=Q, q=p, G=G, h=h_cond, solver="quadprog")
+        if jerk is None:
+            print(f"Cannot solve the QP at iteration {i}")
+            return
+
+        if i > 0:
+            T -= (i % int(T_pred/T_control)) * T_control
+        if T <= 0:
+            T = T_pred
+
+        next_x, next_y = next_com(jerk=jerk[0], previous=prev_x, t_step=T), \
+                         next_com(jerk=jerk[N + Uk.shape[1]], previous=prev_y, t_step=T)
+        com_x.append(next_x[0])
+        com_y.append(next_y[0])
+        com_velocity_x.append(next_x[1])
+        com_velocity_y.append(next_y[1])
+        com_acceleration_x.append(next_x[2])
+        com_acceleration_y.append(next_y[2])
+        curr_cop = (np.array([1, 0, -h / g]) @ next_x, np.array([1, 0, -h / g]) @ next_y)
+        cop_x.append(curr_cop[0])
+        cop_y.append(curr_cop[1])
         # TODO: Comment this
         #  DEBUG
         if i % 5 == 0:

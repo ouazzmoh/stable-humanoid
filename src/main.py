@@ -9,7 +9,7 @@ from controller import MPC
 
 
 T_pred = 100e-3  # (s)
-T_control = 5e-3  # (s)
+T_control = 100e-3  # (s)
 simulation_time = 10  # (s)
 prediction_time = 2  # (s)
 g = 9.81
@@ -19,8 +19,8 @@ spacing = (0.1, 0.4)  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 0.8  # (s)
 steps = int(simulation_time / T_control)
-alpha = 1  # Weight for jerk
-gamma = 1  # Weight for zk_ref
+alpha = 1e-10  # Weight for jerk
+gamma = 1e-10  # Weight for zk_ref
 beta = 1   # Weight for velocity
 average_speed = (0.3, 0)
 stop_at = (8, 10)  # (s)
@@ -28,7 +28,7 @@ stop_at = (8, 10)  # (s)
 robot = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1])
 
 
-def move(trajectory_type, debug=False):
+def move(trajectory_type, debug=False, adapt=False):
     # Problem variables
     xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
@@ -52,7 +52,10 @@ def move(trajectory_type, debug=False):
     # Running the MPC
     controller = MPC(simulation_time, prediction_time, T_control, T_pred, robot, step_planner,
                      alpha, beta, gamma, xk_init, yk_init, debug=debug)
-    cop_x, com_x, cop_y, com_y = controller.run_MPC()
+    if adapt:
+        cop_x, com_x, cop_y, com_y = controller.run_MPC_adapting()
+    else:
+        cop_x, com_x, cop_y, com_y = controller.run_MPC()
 
     # Plot the results
     plt.plot(t, cop_x, label="cop")
@@ -73,7 +76,7 @@ def move(trajectory_type, debug=False):
     # plt.ylim((-0.8, 0.8))
     plt.title("y movement")
     plt.xlabel("time (s)")
-    plt.ylabel("x (m)")
+    plt.ylabel("y (m)")
     plt.legend()
     plt.show()
 
@@ -94,7 +97,7 @@ def move(trajectory_type, debug=False):
 def main():
     # trajectory_type = input("Enter trajectory type: ")
     trajectory_type = "forward"
-    move(trajectory_type)
+    move(trajectory_type, debug=False, adapt=True)
 
 
 if __name__ == "__main__":

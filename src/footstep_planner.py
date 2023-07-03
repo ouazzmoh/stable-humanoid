@@ -103,7 +103,7 @@ class FootstepPlanner:
     def footsteps_to_array(self,
                            from_time: float,
                            to_time: float,
-                           T : float) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+                           T : float) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
         assert(len(self.footsteps_x) == len(self.footsteps_y))
         # Detecting the index of the start and finish
@@ -209,7 +209,7 @@ class FootstepPlanner:
     def speed_plan(self,
                    from_time: float,
                    to_time: float,
-                   T : float ) -> (np.ndarray, np.ndarray):
+                   T : float ) -> Tuple[np.ndarray, np.ndarray]:
         speed_x, speed_y = None, None
         if self.average_speed[0] == 0:
             speed_x = np.zeros(round((to_time-from_time)/T))
