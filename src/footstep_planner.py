@@ -73,6 +73,14 @@ class FootstepPlanner:
             for i in range(int(len(footsteps_x) * 0.5), len(footsteps_x)):
                 footsteps_x[i].orientation = np.pi / 4 + np.pi/2
                 footsteps_y[i].orientation = np.pi / 4 + np.pi/2
+        elif self.trajectory_type == "interactive":
+            footsteps_x, footsteps_y = scenarios.construct_zmin_zmax_interactive((0, 4), (-1.5, 1.5),
+                                                                                 self.simulation_time,
+                                                                                 self.duration_double_init,
+                                                                                 self.duration_step,
+                                                                                 self.robot.foot_dimensions,
+                                                                                 (self.robot.spacing_x,
+                                                                                  self.robot.spacing_y))
         else:
             raise ValueError("Invalid trajectory type: the available scenarios are 'forward', 'upwards', "
                              "'upwards_turning'")
