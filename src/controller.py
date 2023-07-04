@@ -8,6 +8,19 @@ from utils import *
 import visuals
 from typing import Tuple, List
 
+#TODO: Debugging Note for foot adaptation:
+"""
+    The solution of the QP seems to be not correct, as the decided footsteps are not significant.
+    I am assuming that most likely the problem comes from the choice of the current footsteps position 
+    in the objective function and constraints.
+    * Check if there is any dimensions problem in the constraints function, objective is checked.
+    * Plot in a more significant way the decided footsteps
+    * Is my way of the choosing the current footstep correct ? Is the way I separate between the current 
+    and the future footsteps correct ?
+    * Recheck my understanding of the solution, as I don't see clearly as it is claimed in the research paper, 
+    how will the QP decide the footsteps, without really knowing the reference just by the fact that the QP is 
+    minimizing the velocity. Or at least, it seems foggy to me.
+"""
 
 class MPC:
     def __init__(self,
