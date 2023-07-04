@@ -147,6 +147,59 @@ def plot_intermediate_states(i, prev_x, prev_y, prediction_time, T_pred, T, jerk
     plt.show()
 
 
+def plot_intermediate_states_adapting(i, prev_x, prev_y, prediction_time, T_pred, T, solution, h, g, N, zk_ref_pred_x,
+                             zk_ref_pred_y, theta_ref_pred, foot_dimensions, Uk, zk_ref_pred_x_2, zk_ref_pred_y_2) -> None:
+    '''
+    Plot intermediate solutions for the QP problem
+    :param i: iteration
+    :param prev_x: previous x position
+    :param prev_y: previous y position
+    :param prediction_time:
+    :param T_pred: Timestep for prediction
+    :param T: Current timestep
+    :param jerk: Last solved QP's jerk
+    :param h: altitude of COM
+    :param g: gravitational constant
+    :param N: QP problem size
+    :param zk_ref_pred_x: x step references
+    :param zk_ref_pred_y: y step references
+    :param theta_ref_pred: orientation references
+    :param foot_dimensions:
+    :return:
+    '''
+    cop_x_s, com_x_s = [], []
+    cop_y_s, com_y_s = [], []
+    jerk_x, jerk_y = [], []
+    prev_x_s, prev_y_s = prev_x, prev_y
+    for k in range(int(prediction_time / T_pred)):
+        if k == 0:
+            Tk = T
+        else:
+            Tk = T_pred
+        # Get the next x and y
+        next_x_s = next_com(jerk=solution[k], previous=prev_x_s, t_step=Tk)
+        com_x_s.append(next_x_s[0])
+        cop_x_s.append(np.array([1, 0, -h / g]) @ next_x_s)
+        next_y_s = next_com(jerk=solution[N + Uk.shape[1] + k], previous=prev_y_s, t_step=Tk)
+        com_y_s.append(next_y_s[0])
+        cop_y_s.append(np.array([1, 0, -h / g]) @ next_y_s)
+        prev_x_s, prev_y_s = next_x_s, next_y_s
+        # jerk_x.append(jerks[k])
+    _, ax = plt.subplots()
+    ax.plot(cop_x_s, cop_y_s, color="green")
+    # ax.plot(com_x_s, com_y_s, color="red")
+    ax.plot(cop_x_s[0], cop_y_s[0], "ro", label="cop_sol_init")
+    ax.plot(cop_x_s[-1], cop_y_s[-1], "bo", label="cop_sol_end")
+    plot_foot_steps_single(ax, zk_ref_pred_x, zk_ref_pred_y,
+                                   theta_ref_pred, foot_dimensions, spacing=0.4)
+    # plot_foot_steps_single(ax, zk_ref_pred_x_2, zk_ref_pred_y_2,
+    #                        theta_ref_pred, foot_dimensions, spacing=0.4)
+    plt.title("QP" + str(i + 1))
+    # plt.ylim((-0.6, 0.6))
+    plt.legend()
+    plt.show()
+
+
 def plot_results(cop_x: np.ndarray,
                  com_x: np.ndarray,
                  cop_y: np.ndarray,

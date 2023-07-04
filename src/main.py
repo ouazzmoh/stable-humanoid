@@ -4,6 +4,7 @@ from visuals import *
 from simulations import *
 
 from robot import Robot
+from perturbation import Perturbation
 from footstep_planner import FootstepPlanner
 from controller import MPC
 
@@ -19,8 +20,8 @@ spacing = (0.1, 0.4)  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 0.8  # (s)
 steps = int(simulation_time / T_control)
-alpha = 1e-10  # Weight for jerk
-gamma = 1e-10  # Weight for zk_ref
+alpha = 1  # Weight for jerk
+gamma = 1  # Weight for zk_ref
 beta = 1   # Weight for velocity
 average_speed = (0.3, 0)
 stop_at = (8, 10)  # (s)
@@ -97,7 +98,7 @@ def move(trajectory_type, debug=False, adapt=False):
 def main():
     # trajectory_type = input("Enter trajectory type: ")
     trajectory_type = "forward"
-    move(trajectory_type, debug=False, adapt=True)
+    move(trajectory_type, debug=True, adapt=True)
 
 
 if __name__ == "__main__":
