@@ -698,3 +698,21 @@ def retrieve_problem_data_from_file(file: h5._hl.files.File, iter: int):
         if f"{data_name}/data" in group:
             qp_data[data_name] = group[f"{data_name}/data"][:]
     return qp_data
+
+
+from scipy.interpolate import UnivariateSpline
+
+def smooth_data(data, smooth_factor=0):
+    """Applies a spline smoothing to a 1D list.
+
+    Arguments:
+    data -- the list to smooth
+    smooth_factor -- a factor controlling the amount of smoothing; higher values result in more smoothing
+
+    Returns:
+    A list containing the smoothed data.
+    """
+    x = list(range(len(data)))
+    spl = UnivariateSpline(x, data, k=3, s=smooth_factor)
+    smoothed_data = spl(x)
+    return smoothed_data.tolist()

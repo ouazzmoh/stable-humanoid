@@ -20,9 +20,9 @@ spacing = (0.1, 0.4)  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 0.8  # (s)
 steps = int(simulation_time / T_control)
-alpha = 1e-3  # Weight for jerk
-gamma = 1  # Weight for zk_ref
-beta = 1e-3   # Weight for velocity
+alpha = 1  # Weight for jerk
+gamma = 1e3  # Weight for zk_ref
+beta = 1   # Weight for velocity
 average_speed = (0.3, 0)
 stop_at = (8, 10)  # (s)
 
@@ -39,6 +39,15 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
                                    stop_at=stop_at)
 
     zk_min_x, zk_max_x, zk_min_y, zk_max_y, theta_ref = step_planner.footsteps_to_array(0, simulation_time, T_control)
+
+    plt.plot(zk_min_x, label="zk_min_x")
+    plt.plot(zk_max_x, label="zk_max_x")
+    plt.show()
+    plt.plot(zk_min_y, label="zk_min_y")
+    plt.plot(zk_max_y, label="zk_max_y")
+    plt.show()
+
+
     # speed_ref_x, speed_ref_y = step_planner.speed_to_array(0, simulation_time, T_control)
     t = np.arange(0, simulation_time, T_control)
     zk_ref_x = (zk_min_x + zk_max_x)/2

@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from step import Step
 from typing import List, Tuple
+from utils import smooth_data
 
 def construct_zmin_zmax_alt(total_duration, duration_double_init, duration_step,
                             foot_size, spacing) -> List[Step]:
@@ -19,8 +20,8 @@ def construct_zmin_zmax_alt(total_duration, duration_double_init, duration_step,
     # Initial double support
     footsteps.append(Step(0,
                           duration_double_init,
-                          z_min=-(foot_size + spacing),
-                          z_max=foot_size + spacing,
+                          z_min=-(foot_size + spacing/2),
+                          z_max=foot_size + spacing/2,
                           shift=0))
     for step_i in range(number_of_steps):
         if step_i % 2 == 0:
@@ -28,30 +29,30 @@ def construct_zmin_zmax_alt(total_duration, duration_double_init, duration_step,
                 # Left support
                 footsteps.append(Step(step_i * duration_step + duration_double_init,
                                       total_duration,
-                                      z_min=-(foot_size + spacing),
-                                      z_max=0,
+                                      z_min=-(foot_size + spacing/2),
+                                      z_max=-spacing/2,
                                       shift=0))
             else:
                 # Left support
                 footsteps.append(Step(step_i*duration_step + duration_double_init,
                                       (step_i+1)*duration_step + duration_double_init,
-                                      z_min=-(foot_size + spacing),
-                                      z_max=0,
+                                      z_min=-(foot_size + spacing/2),
+                                      z_max=-spacing/2,
                                       shift=0))
         else:
             if step_i == number_of_steps - 1:
                 # Right support
                 footsteps.append(Step(step_i * duration_step + duration_double_init,
                                       total_duration,
-                                      z_min=0,
-                                      z_max=foot_size + spacing,
+                                      z_min=spacing/2,
+                                      z_max=foot_size + spacing/2,
                                       shift=0))
             else:
                 # Right support
                 footsteps.append(Step(step_i * duration_step + duration_double_init,
                                       (step_i + 1) * duration_step + duration_double_init,
-                                      z_min=0,
-                                      z_max=foot_size + spacing,
+                                      z_min=spacing/2,
+                                      z_max=foot_size + spacing/2,
                                       shift=0))
     return footsteps
 
@@ -73,33 +74,30 @@ def construct_zmin_zmax_forward(total_duration, duration_double_init, duration_s
     # Initial double support
     footsteps.append(Step(0,
                           duration_double_init,
-                          z_min=-(foot_size + spacing),
-                          z_max=foot_size + spacing,
+                          z_min=-(foot_size + spacing/2),
+                          z_max=foot_size + spacing/2,
                           shift=0))
     # Step on other direction: keep the double support here
     footsteps.append(Step(duration_double_init,
                           duration_double_init+duration_step,
-                          z_min=-(foot_size + spacing),
-                          z_max=foot_size + spacing,
+                          z_min=-(foot_size + spacing/2),
+                          z_max=foot_size + spacing/2,
                           shift=0))
 
     for step_i in range(1, number_of_steps):
         if step_i == number_of_steps - 1:
             footsteps.append(Step(step_i * duration_step + duration_double_init,
                                   total_duration,
-                                  z_min=(step_i - 1) * (foot_size + spacing),
-                                  z_max=step_i * (foot_size + spacing),
+                                  z_min=(step_i - 1) * (foot_size + spacing/2),
+                                  z_max=step_i * (foot_size + spacing/2),
                                   shift=0))
-        else :
+        else:
             # Complete with the last value until the end of the simulation
             footsteps.append(Step(step_i * duration_step + duration_double_init,
                                   (step_i + 1) * duration_step + duration_double_init,
-                                  z_min=(step_i - 1)*(foot_size + spacing),
-                                  z_max=step_i*(foot_size + spacing),
+                                  z_min=(step_i - 1)*(foot_size + spacing/2),
+                                  z_max=step_i*(foot_size + spacing/2),
                                   shift=0))
-
-
-
     return footsteps
 
 
@@ -119,8 +117,8 @@ def construct_zmin_zmax_alt_forward(total_duration, duration_double_init, durati
     # Initial double support
     footsteps.append(Step(0,
                           duration_double_init,
-                          z_min=-(foot_size + spacing),
-                          z_max=foot_size + spacing,
+                          z_min=-(foot_size + spacing/2),
+                          z_max=foot_size + spacing/2,
                           shift=0))
     for step_i in range(number_of_steps):
         if step_i % 2 == 0:
@@ -128,14 +126,14 @@ def construct_zmin_zmax_alt_forward(total_duration, duration_double_init, durati
                 # Left support
                 footsteps.append(Step(step_i * duration_step + duration_double_init,
                                       total_duration,
-                                      z_min=-(foot_size + spacing) + step_i * shift,
+                                      z_min=-(foot_size + spacing/2) + step_i * shift,
                                       z_max=0 + step_i * shift,
                                       shift=0))
             else:
                 # Left support
                 footsteps.append(Step(step_i*duration_step + duration_double_init,
                                       (step_i+1)*duration_step + duration_double_init,
-                                      z_min=-(foot_size + spacing) + step_i * shift,
+                                      z_min=-(foot_size + spacing/2) + step_i * shift,
                                       z_max=0 + step_i * shift,
                                       shift=0))
         else:
@@ -144,14 +142,14 @@ def construct_zmin_zmax_alt_forward(total_duration, duration_double_init, durati
                 footsteps.append(Step(step_i * duration_step + duration_double_init,
                                       total_duration,
                                       z_min=0 + step_i * shift,
-                                      z_max=foot_size + spacing + step_i * shift,
+                                      z_max=foot_size + spacing/2 + step_i * shift,
                                       shift=0))
             else:
                 # Right support
                 footsteps.append(Step(step_i * duration_step + duration_double_init,
                                       (step_i + 1) * duration_step + duration_double_init,
                                       z_min=0 + step_i * shift,
-                                      z_max=foot_size + spacing + step_i * shift,
+                                      z_max=foot_size + spacing/2 + step_i * shift,
                                       shift=0))
     return footsteps
 
@@ -171,21 +169,21 @@ def construct_zmin_zmax_forward_backwards(total_duration, duration_double_init, 
     # Initial double support
     footsteps.append(Step(0,
                           duration_double_init,
-                          z_min=-(foot_size + spacing),
-                          z_max=foot_size + spacing,
+                          z_min=-(foot_size + spacing/2),
+                          z_max=foot_size + spacing/2,
                           shift=0))
     # Step on other direction: keep the double support here
     footsteps.append(Step(duration_double_init,
                           duration_double_init+duration_step,
-                          z_min=-(foot_size + spacing),
-                          z_max=foot_size + spacing,
+                          z_min=-(foot_size + spacing/2),
+                          z_max=foot_size + spacing/2,
                           shift=0))
     for step_i in range(1, int(0.5*number_of_steps)):
         # Complete with the last value until the end of the simulation
         footsteps.append(Step(step_i * duration_step + duration_double_init,
                               (step_i + 1) * duration_step + duration_double_init,
-                              z_min=(step_i - 1) * (foot_size + spacing),
-                              z_max=step_i * (foot_size + spacing),
+                              z_min=(step_i - 1) * (foot_size + spacing/2),
+                              z_max=step_i * (foot_size + spacing/2),
                               shift=0))
 
 
@@ -193,14 +191,14 @@ def construct_zmin_zmax_forward_backwards(total_duration, duration_double_init, 
         if step_i == number_of_steps - 1:
             footsteps.append(Step(step_i * duration_step + duration_double_init,
                                   total_duration,
-                                  z_min=(number_of_steps - step_i - 1) * (foot_size + spacing),
-                                  z_max=(number_of_steps - step_i) * (foot_size + spacing),
+                                  z_min=(number_of_steps - step_i - 1) * (foot_size + spacing/2),
+                                  z_max=(number_of_steps - step_i) * (foot_size + spacing/2),
                                   shift=0))
         else:
             footsteps.append(Step(step_i * duration_step + duration_double_init,
                                   (step_i + 1) * duration_step + duration_double_init,
-                                  z_min=(number_of_steps - step_i - 1)*(foot_size + spacing),
-                                  z_max=(number_of_steps - step_i)*(foot_size + spacing),
+                                  z_min=(number_of_steps - step_i - 1)*(foot_size + spacing/2),
+                                  z_max=(number_of_steps - step_i)*(foot_size + spacing/2),
                                   shift=0))
     return footsteps
 
@@ -243,11 +241,20 @@ def construct_zmin_zmax_interactive(x_axis: Tuple,
     plt.grid()
     plt.show()
 
-    zk_min_x = np.array(zk_ref_x_interactive) - foot_dimensions[0]/2 - spacing[0]/2
-    zk_max_x = np.array(zk_ref_x_interactive) + foot_dimensions[0] / 2 + spacing[0] / 2
+    zk_ref_y_interactive = smooth_data(zk_ref_y_interactive)
+    zk_ref_x_interactive = smooth_data(zk_ref_x_interactive)
 
-    zk_min_y = np.array(zk_ref_y_interactive) - foot_dimensions[1] / 2 - spacing[1] / 2
-    zk_max_y = np.array(zk_ref_y_interactive) + foot_dimensions[1] / 2 + spacing[1] / 2
+    zk_min_x = np.array(zk_ref_x_interactive) - foot_dimensions[0]/2
+    zk_max_x = np.array(zk_ref_x_interactive) + foot_dimensions[0]/2
+    zk_min_x[0] = -spacing[0]/2 - foot_dimensions[0]
+    zk_max_x[0] = spacing[0]/2 + foot_dimensions[0]
+    zk_min_x[1] = -spacing[0] / 2 - foot_dimensions[0]
+    zk_max_x[1] = spacing[0] / 2 + foot_dimensions[0]
+
+    zk_min_y = np.array(zk_ref_y_interactive) - foot_dimensions[1]/2
+    zk_max_y = np.array(zk_ref_y_interactive) + foot_dimensions[1]/2
+    zk_min_y[0] = -spacing[1]/2 - foot_dimensions[1]
+    zk_max_y[0] = spacing[1]/2 + foot_dimensions[1]
 
     footsteps_x, footsteps_y = [], []
 
