@@ -17,7 +17,7 @@ class Robot:
         self.left_foot_position = None
         self.right_foot_position = None
 
-    def set_positional_attributes(self, xk, yk, g):
+    def set_positional_attributes(self, xk, yk, g, ref_x=None, ref_y=None):
         self.com_position = np.array([xk[0], yk[0]])
         self.com_velocity = np.array([xk[1], yk[1]])
         self.com_acceleration = np.array([xk[2], yk[2]])

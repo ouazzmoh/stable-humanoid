@@ -1,9 +1,10 @@
+from typing import Tuple, List
 from robot import Robot
 from perturbation import Perturbation
 from footstep_planner import FootstepPlanner
 from utils import *
 import visuals
-from typing import Tuple, List
+
 
 
 class MPC:
@@ -83,7 +84,7 @@ class MPC:
                               zk_ref_pred_y : np.ndarray,
                               prev_x : np.ndarray,
                               prev_y : np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        # Construct the constraints
+
         N = int(self.prediction_time / self.T_pred)
         foot_dimensions = self.robot.foot_dimensions
         Pzu = p_z_u_matrix(T, self.robot.h, self.g, N)
@@ -100,8 +101,14 @@ class MPC:
                                     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Get the prediction horizon data for the current iteration
-        :param i:
-        :return:
+        Args:
+            i: current iteration
+        Returns:
+            zk_ref_pred_x: reference x position of the footsteps in the prediction horizon
+            zk_ref_pred_y: reference y position of the footsteps in the prediction horizon
+            speed_ref_x_pred: reference x speed of the footsteps in the prediction horizon
+            speed_ref_y_pred: reference y speed of the footsteps in the prediction horizon
+            theta_ref_pred: reference orientation of the footsteps in the prediction horizon
         """
         curr_horizon_init, curr_horizon_end = i * self.T_control, i * self.T_control + self.prediction_time
         zk_min_x, zk_max_x, zk_min_y, zk_max_y, theta_ref_pred = \
@@ -119,13 +126,19 @@ class MPC:
                       file=None) -> None:
         """
         Perform one iteration of the MPC, i.e. solve the QP of stable walking
-        The function doesn't return anything, but it updates the positional arguments of the robot 
+        The function doesn't return anything, but it updates the positional arguments of the robot
         (attribute of controller)
-        :param i: current iteration
-        :param N: Number of sample in the prediction horizon i.e. QP problem size
-        :param T: The proper step of integration: used for intermediate visualizations
-        :param file: The file to store the QP problem if needed
-        :return: 
+        Args:
+            i: current iteration of the MPC loop
+            N: Number of sample in the prediction horizon i.e. QP problem size
+            T: The proper step of integration: used for intermediate visualizations
+            file: The file to store the QP problem if needed
+        Raises:
+            ValueError: If the robot com position is not initialized
+            ValueError: If the QP problem is not feasible
+        Returns:
+            None
+
         """
         if self.robot.com_position is None:
             raise ValueError("The robot com position is not initialized")
@@ -140,7 +153,6 @@ class MPC:
         # TODO : Remove this assertion
         assert(len(zk_ref_pred_x) == len(zk_ref_pred_y) == len(speed_ref_y_pred) == len(speed_ref_x_pred)
                == len(theta_ref_pred) == N)
-
 
         # Construct the objective function
         Q, p = self.construct_objective(self.T_pred, zk_ref_pred_x, zk_ref_pred_y,
