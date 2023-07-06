@@ -10,7 +10,7 @@ from controller import MPC
 
 
 T_pred = 100e-3  # (s)
-T_control = 5e-3  # (s)
+T_control = 100e-3  # (s)
 simulation_time = 10  # (s)
 prediction_time = 2  # (s)
 g = 9.81
@@ -105,7 +105,7 @@ def main():
     # trajectory_type = input("Enter trajectory type: ")
     trajectory_type = "forward"
     perturbations = [Perturbation(0, 0.6, 6)]
-    move(trajectory_type, debug=True)
+    move(trajectory_type, debug=False)
 
 
 if __name__ == "__main__":

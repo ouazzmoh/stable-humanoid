@@ -17,13 +17,51 @@ class Robot:
         self.left_foot_position = None
         self.right_foot_position = None
 
-    def set_positional_attributes(self, xk, yk, g, ref_x=None, ref_y=None):
+    def initialize_position(self, xk, yk, g):
+        self.com_position = np.array([xk[0], yk[0]])
+        self.com_velocity = np.array([xk[1], yk[1]])
+        self.com_acceleration = np.array([xk[2], yk[2]])
+        self.cop_position = (np.array([1, 0, -self.h / g]) @ xk, np.array([1, 0, -self.h / g]) @ yk)
+
+    def set_positional_attributes(self, xk, yk, steps, foot, g):
         self.com_position = np.array([xk[0], yk[0]])
         self.com_velocity = np.array([xk[1], yk[1]])
         self.com_acceleration = np.array([xk[2], yk[2]])
         self.cop_position = (np.array([1, 0, -self.h / g]) @ xk, np.array([1, 0, -self.h / g]) @ yk)
         # TODO : Foot positions
-        self.left_foot_position = None
-        self.right_foot_position = None
+        foot_position = np.array([steps[0][0], steps[0][1]])
+
+        if foot == "left":
+            self.left_foot_position = foot_position
+            self.right_foot_position = None
+        elif foot == "right":
+            self.right_foot_position = foot_position
+            self.left_foot_position = None
+        else:
+            # TODO : during double support we give the position of the com for now !
+            self.right_foot_position = self.com_position
+            self.left_foot_position = self.com_position
+        min_dist = abs((self.cop_position[0] - foot_position[0])**2 + (self.cop_position[1] - foot_position[1])**2)
+
+        for step in steps:
+            dist = abs((self.cop_position[0] - step[0])**2 + (self.cop_position[1] - step[1])**2)
+            if dist < min_dist:
+                min_dist = dist
+                if foot == "left":
+                    self.left_foot_position = np.array([step[0], step[1]])
+                    self.right_foot_position = None
+                elif foot == "right":
+                    self.right_foot_position = np.array([step[0], step[1]])
+                    self.left_foot_position = None
+                else :
+                    # TODO : during double support we give the position of the com for now !
+                    self.right_foot_position = self.com_position
+                    self.left_foot_position = self.com_position
+
+
+        print("left foot position : ", self.left_foot_position)
+        print('right foot position : ', self.right_foot_position)
+
+
 
 

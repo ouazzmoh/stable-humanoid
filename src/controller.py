@@ -98,7 +98,8 @@ class MPC:
 
     def get_prediction_horizon_data(self,
                                     i: int,
-                                    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+                                    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+                                               List[Tuple]]:
         """
         Get the prediction horizon data for the current iteration
         Args:
@@ -117,7 +118,10 @@ class MPC:
                                                                               curr_horizon_end, self.T_pred)
         zk_ref_pred_x = (zk_min_x + zk_max_x) / 2
         zk_ref_pred_y = (zk_min_y + zk_max_y) / 2
-        return zk_ref_pred_x, zk_ref_pred_y, speed_ref_x_pred, speed_ref_y_pred, theta_ref_pred
+
+        steps = self.footstep_planner.get_footsteps(curr_horizon_init, curr_horizon_end)
+
+        return zk_ref_pred_x, zk_ref_pred_y, speed_ref_x_pred, speed_ref_y_pred, theta_ref_pred, steps
 
     def MPC_iteration(self,
                       i: int,
@@ -147,8 +151,10 @@ class MPC:
         curr_xk = np.array([self.robot.com_position[0], self.robot.com_velocity[0], self.robot.com_acceleration[0]])
         curr_yk = np.array([self.robot.com_position[1], self.robot.com_velocity[1], self.robot.com_acceleration[1]])
         # Get the current prediction horizon
-        zk_ref_pred_x, zk_ref_pred_y, speed_ref_x_pred, speed_ref_y_pred, theta_ref_pred = \
+        zk_ref_pred_x, zk_ref_pred_y, speed_ref_x_pred, speed_ref_y_pred, theta_ref_pred, steps = \
             self.get_prediction_horizon_data(i)
+
+
 
         # TODO : Remove this assertion
         assert(len(zk_ref_pred_x) == len(zk_ref_pred_y) == len(speed_ref_y_pred) == len(speed_ref_x_pred)
@@ -194,7 +200,9 @@ class MPC:
                     next_x[2] += perturb.value_x
                     next_y[2] += perturb.value_y
         # Update the status of the position
-        self.robot.set_positional_attributes(next_x, next_y, self.g)
+        foot = "left" if i % 2 == 0 else "right"
+
+        self.robot.set_positional_attributes(next_x, next_y, steps, foot, self.g)
 
 
     def run_MPC(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -209,7 +217,7 @@ class MPC:
         T = self.T_pred  # The proper step of integration: used for intermediate visualizations
 
         # Initialize state of the robot
-        self.robot.set_positional_attributes(self.xk_init, self.yk_init, self.g)
+        self.robot.initialize_position(self.xk_init, self.yk_init, self.g)
 
         # Run the simulation
         if self.write_hdf5:
