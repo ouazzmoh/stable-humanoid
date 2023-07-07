@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import binom
 import os
 import h5py as h5
 from qpsolvers import solve_qp
@@ -730,3 +731,30 @@ def remove_duplicates(lst):
                 res.append(tuple(item))
     return res
 
+
+
+
+def Bernstein(n, k, x):
+    coeff = binom(n, k)
+    return coeff * x ** k * (1 - x) ** (n - k)
+
+
+def get_control_points(src, dest, dx=0.0, dy=0.0, dz=0.0):
+    """_summary_
+
+    Args:
+        src (_type_): _description_
+        dest (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    P0, P3 = src, dest
+    P1 = P0 + np.array([dx, dy, dz])
+    P2 = P3 + np.array([dx, dy, dz]) 
+    return np.vstack((P0, P1, P2, P3))
+
+
+def get_mid(src: np.ndarray, dest: np.ndarray) -> np.ndarray:
+    mid = src + dest / 2
+    return mid
