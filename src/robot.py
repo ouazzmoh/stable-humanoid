@@ -54,7 +54,7 @@ class Robot:
                 elif foot == "right":
                     self.right_foot_position = np.array([step[0], step[1]])
                     self.left_foot_position = None
-                else :
+                else:
                     self.right_foot_position = self.com_position
                     self.left_foot_position = self.com_position
 
