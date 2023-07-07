@@ -200,9 +200,7 @@ class MPC:
                     next_x[2] += perturb.value_x
                     next_y[2] += perturb.value_y
         # Update the status of the position
-        foot = "left" if i % 2 == 0 else "right"
-
-        self.robot.set_positional_attributes(next_x, next_y, steps, foot, self.g)
+        self.robot.set_positional_attributes(next_x, next_y, steps, self.g)
 
 
     def run_MPC(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:

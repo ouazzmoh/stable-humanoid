@@ -132,7 +132,8 @@ class FootstepPlanner:
 
         for k in range(start_index, end_index+1):
             step_k = (((self.footsteps_x[k].z_max + self.footsteps_x[k].z_min)/2),
-                      ((self.footsteps_y[k].z_max + self.footsteps_y[k].z_min) / 2))
+                      ((self.footsteps_y[k].z_max + self.footsteps_y[k].z_min) / 2),
+                      self.footsteps_x[k].which_foot)
             steps.append(step_k)
         return steps
 

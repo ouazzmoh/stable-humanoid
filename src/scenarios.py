@@ -22,6 +22,7 @@ def construct_zmin_zmax_alt(total_duration, duration_double_init, duration_step,
                           duration_double_init,
                           z_min=-(foot_size + spacing/2),
                           z_max=foot_size + spacing/2,
+                          which_foot="double_support",
                           shift=0))
     for step_i in range(number_of_steps):
         if step_i % 2 == 0:
@@ -31,6 +32,7 @@ def construct_zmin_zmax_alt(total_duration, duration_double_init, duration_step,
                                       total_duration,
                                       z_min=-(foot_size + spacing/2),
                                       z_max=-spacing/2,
+                                      which_foot="right",
                                       shift=0))
             else:
                 # Left support
@@ -38,6 +40,7 @@ def construct_zmin_zmax_alt(total_duration, duration_double_init, duration_step,
                                       (step_i+1)*duration_step + duration_double_init,
                                       z_min=-(foot_size + spacing/2),
                                       z_max=-spacing/2,
+                                      which_foot="right",
                                       shift=0))
         else:
             if step_i == number_of_steps - 1:
@@ -46,6 +49,7 @@ def construct_zmin_zmax_alt(total_duration, duration_double_init, duration_step,
                                       total_duration,
                                       z_min=spacing/2,
                                       z_max=foot_size + spacing/2,
+                                      which_foot="left",
                                       shift=0))
             else:
                 # Right support
@@ -53,6 +57,7 @@ def construct_zmin_zmax_alt(total_duration, duration_double_init, duration_step,
                                       (step_i + 1) * duration_step + duration_double_init,
                                       z_min=spacing/2,
                                       z_max=foot_size + spacing/2,
+                                      which_foot="left",
                                       shift=0))
     return footsteps
 
@@ -76,12 +81,14 @@ def construct_zmin_zmax_forward(total_duration, duration_double_init, duration_s
                           duration_double_init,
                           z_min=-(foot_size + spacing/2),
                           z_max=foot_size + spacing/2,
+                          which_foot='double_support',
                           shift=0))
     # Step on other direction: keep the double support here
     footsteps.append(Step(duration_double_init,
                           duration_double_init+duration_step,
                           z_min=-(foot_size + spacing/2),
                           z_max=foot_size + spacing/2,
+                          which_foot='right',
                           shift=0))
 
     for step_i in range(1, number_of_steps):
@@ -90,6 +97,7 @@ def construct_zmin_zmax_forward(total_duration, duration_double_init, duration_s
                                   total_duration,
                                   z_min=(step_i - 1) * (foot_size + spacing/2),
                                   z_max=step_i * (foot_size + spacing/2),
+                                  which_foot='right' if step_i % 2 == 0 else 'left',
                                   shift=0))
         else:
             # Complete with the last value until the end of the simulation
@@ -97,6 +105,7 @@ def construct_zmin_zmax_forward(total_duration, duration_double_init, duration_s
                                   (step_i + 1) * duration_step + duration_double_init,
                                   z_min=(step_i - 1)*(foot_size + spacing/2),
                                   z_max=step_i*(foot_size + spacing/2),
+                                  which_foot='right' if step_i % 2 == 0 else 'left',
                                   shift=0))
     return footsteps
 
@@ -119,6 +128,7 @@ def construct_zmin_zmax_alt_forward(total_duration, duration_double_init, durati
                           duration_double_init,
                           z_min=-(foot_size + spacing/2),
                           z_max=foot_size + spacing/2,
+                          which_foot="double_support",
                           shift=0))
     for step_i in range(number_of_steps):
         if step_i % 2 == 0:
