@@ -727,6 +727,6 @@ def remove_duplicates(lst):
             item_tuple = tuple(item.tolist()) if isinstance(item, np.ndarray) else tuple(item)
             if item_tuple not in seen:
                 seen.append(item_tuple)
-                res.append(item)
+                res.append(tuple(item))
     return res
 
