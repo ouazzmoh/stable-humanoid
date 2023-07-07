@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Tuple, List
 
 class Robot:
     def __init__(self,
@@ -17,13 +18,19 @@ class Robot:
         self.left_foot_position = None
         self.right_foot_position = None
 
-    def initialize_position(self, xk, yk, g):
+    def initialize_position(self,
+                            xk, yk, g):
         self.com_position = np.array([xk[0], yk[0]])
         self.com_velocity = np.array([xk[1], yk[1]])
         self.com_acceleration = np.array([xk[2], yk[2]])
         self.cop_position = (np.array([1, 0, -self.h / g]) @ xk, np.array([1, 0, -self.h / g]) @ yk)
+        self.left_foot_position = np.array([xk[0], yk[0] + self.spacing_y/2 + self.foot_dimensions[1]/2])
 
-    def set_positional_attributes(self, xk, yk, steps, g):
+    def set_positional_attributes(self,
+                                  xk: Tuple,
+                                  yk: Tuple,
+                                  steps: List[Tuple],
+                                  g: float):
         self.com_position = np.array([xk[0], yk[0]])
         self.com_velocity = np.array([xk[1], yk[1]])
         self.com_acceleration = np.array([xk[2], yk[2]])
@@ -59,5 +66,7 @@ class Robot:
                     self.left_foot_position = self.com_position
 
 
-
+    def get_positional_attributes(self):
+        return self.com_position, self.com_velocity, self.com_acceleration, self.cop_position, \
+               self.left_foot_position, self.right_foot_position
 

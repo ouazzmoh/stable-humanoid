@@ -39,16 +39,6 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
                                    stop_at=stop_at)
 
     zk_min_x, zk_max_x, zk_min_y, zk_max_y, theta_ref = step_planner.footsteps_to_array(0, simulation_time, T_control)
-
-    plt.plot(zk_min_x, label="zk_min_x")
-    plt.plot(zk_max_x, label="zk_max_x")
-    plt.show()
-    plt.plot(zk_min_y, label="zk_min_y")
-    plt.plot(zk_max_y, label="zk_max_y")
-    plt.show()
-
-
-    # speed_ref_x, speed_ref_y = step_planner.speed_to_array(0, simulation_time, T_control)
     t = np.arange(0, simulation_time, T_control)
     zk_ref_x = (zk_min_x + zk_max_x)/2
     zk_ref_y = (zk_min_y + zk_max_y)/2
@@ -59,33 +49,48 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     plt.title("footstep references in time")
     plt.legend()
     plt.show()
+
+
     # Running the MPC
     controller = MPC(simulation_time, prediction_time, T_control, T_pred, robot, step_planner,
                      alpha, beta, gamma, xk_init, yk_init, write_hdf5=store, debug=debug, perturbations=perturbations)
-    cop_x, com_x, cop_y, com_y = controller.run_MPC()
 
-    # Plot the results
-    plt.plot(t, cop_x, label="cop")
-    plt.plot(t, com_x, label="com")
-    plt.plot(t, zk_min_x, linewidth=0.7)
-    plt.plot(t, zk_max_x, linewidth=0.7)
-    plt.title("x movement")
-    plt.xlabel("time (s)")
-    plt.ylabel("x (m)")
-    # plt.ylim(0,2)
-    plt.legend()
-    plt.show()
+    # Initialize state of the robot
+    robot.initialize_position(xk_init, yk_init, g)
 
-    plt.plot(t, cop_y, label="cop")
-    plt.plot(t, com_y, label="com")
-    plt.plot(t, zk_min_y, linewidth=0.7)
-    plt.plot(t, zk_max_y, linewidth=0.7)
-    # plt.ylim((-0.8, 0.8))
-    plt.title("y movement")
-    plt.xlabel("time (s)")
-    plt.ylabel("x (m)")
-    plt.legend()
-    plt.show()
+    # Parameters
+    N = int(prediction_time / T_pred)
+    T = T_pred  # Used for intermediate visualizations
+    n_iterations = int(simulation_time / T_control)
+
+    # Run the MPC
+    com_x, com_y, cop_x, cop_y = [], [], [], []
+    left_foot, right_foot = [], []
+
+    for i in range(n_iterations):
+        curr_com, _, _, curr_cop, curr_left, curr_right = robot.get_positional_attributes()
+        com_x.append(curr_com[0])
+        com_y.append(curr_com[1])
+        cop_x.append(curr_cop[0])
+        cop_y.append(curr_cop[1])
+        left_foot.append(curr_left)
+        right_foot.append(curr_right)
+        # Run the MPC iteration and update the robot state
+        controller.MPC_iteration(i, N, T)
+
+
+    left_foot_unique = remove_duplicates(left_foot)
+    right_foot_unique = remove_duplicates(right_foot)
+
+    print(left_foot_unique)
+    print(right_foot_unique)
+    """
+    [array([0.   , 0.325]), array([0.175, 0.325]), array([0.875, 0.325]), array([1.575, 0.325]), array([2.275, 0.325]), array([2.975, 0.325])]
+    [array([ 0.   , -0.325]), array([ 0.525, -0.325]), array([ 1.225, -0.325]), array([ 1.925, -0.325]), array([ 2.625, -0.325]), array([ 3.325, -0.325])]
+    """
+    # todo: Start with left
+
+
 
     fig, ax = plt.subplots()
     ax.plot(cop_x, cop_y, label="cop", color="green")
@@ -102,9 +107,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
 
 def main():
-    # trajectory_type = input("Enter trajectory type: ")
     trajectory_type = "forward"
-    perturbations = [Perturbation(0, 0.6, 6)]
     move(trajectory_type, debug=False)
 
 

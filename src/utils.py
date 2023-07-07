@@ -716,3 +716,17 @@ def smooth_data(data, smooth_factor=0):
     spl = UnivariateSpline(x, data, k=3, s=smooth_factor)
     smoothed_data = spl(x)
     return smoothed_data.tolist()
+
+
+def remove_duplicates(lst):
+    seen = []
+    res = []
+    for item in lst:
+        if item is not None:
+            # convert numpy array or list to tuple
+            item_tuple = tuple(item.tolist()) if isinstance(item, np.ndarray) else tuple(item)
+            if item_tuple not in seen:
+                seen.append(item_tuple)
+                res.append(item)
+    return res
+
