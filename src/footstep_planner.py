@@ -73,6 +73,14 @@ class FootstepPlanner:
             for i in range(int(len(footsteps_x) * 0.5), len(footsteps_x)):
                 footsteps_x[i].orientation = np.pi / 4 + np.pi/2
                 footsteps_y[i].orientation = np.pi / 4 + np.pi/2
+        elif self.trajectory_type == "interactive":
+            footsteps_x, footsteps_y = scenarios.construct_zmin_zmax_interactive((0, 4), (-1.5, 1.5),
+                                                                                 self.simulation_time,
+                                                                                 self.duration_double_init,
+                                                                                 self.duration_step,
+                                                                                 self.robot.foot_dimensions,
+                                                                                 (self.robot.spacing_x,
+                                                                                  self.robot.spacing_y))
         else:
             raise ValueError("Invalid trajectory type: the available scenarios are 'forward', 'upwards', "
                              "'upwards_turning'")
@@ -100,10 +108,54 @@ class FootstepPlanner:
         self.footsteps_y[-1].end_time += by_time
 
 
+    def get_footsteps(self,
+                      from_time: float,
+                      to_time: float) -> List[Tuple]:
+        """
+        Get the footsteps from the given time interval
+        Args:
+            from_time:
+            to_time:
+
+        Returns:
+
+        """
+        assert(len(self.footsteps_x) == len(self.footsteps_y))
+        start_index, end_index = 0, len(self.footsteps_x)
+        steps = []
+
+        for i in range(len(self.footsteps_x)):
+            if self.footsteps_x[i].start_time <= from_time <= self.footsteps_x[i].end_time:
+                start_index = i
+            if self.footsteps_x[i].start_time <= to_time <= self.footsteps_x[i].end_time:
+                end_index = i
+
+        for k in range(start_index, end_index+1):
+            step_k = (((self.footsteps_x[k].z_max + self.footsteps_x[k].z_min)/2),
+                      ((self.footsteps_y[k].z_max + self.footsteps_y[k].z_min) / 2),
+                      self.footsteps_x[k].which_foot)
+            steps.append(step_k)
+        return steps
+
+
+
+
+
+
     def footsteps_to_array(self,
                            from_time: float,
                            to_time: float,
-                           T : float) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+                           T : float) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+        """
+        Get the footsteps from the given time interval as a numpy array sampled at the given period T
+        Args:
+            from_time:
+            to_time:
+            T: sampling period
+
+        Returns:
+
+        """
 
         assert(len(self.footsteps_x) == len(self.footsteps_y))
         # Detecting the index of the start and finish

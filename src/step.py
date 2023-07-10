@@ -6,6 +6,7 @@ class Step:
                  z_min: float,
                  z_max: float,
                  shift: float,
+                 which_foot: str,
                  orientation: float = 0) -> None:
         self.start_time = start_time
         self.end_time = end_time
@@ -13,4 +14,5 @@ class Step:
         self.z_max = z_max
         self.shift = shift
         self.orientation = orientation
+        self.which_foot = which_foot
 
