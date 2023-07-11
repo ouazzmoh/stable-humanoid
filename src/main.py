@@ -7,18 +7,66 @@ from robot import Robot
 from perturbation import Perturbation
 from footstep_planner import FootstepPlanner
 from controller import MPC
+import sys
+import meshcat_shapes
+import numpy as np
+import pinocchio as pin
+import qpsolvers
+from loop_rate_limiters import RateLimiter
+import pinocchio as pin
+import pink
+from pink import solve_ik
+from pink.tasks import FrameTask, PostureTask
+from utils import *
+from bezier_curve import BezierCurve
 
+try:
+    from robot_descriptions.loaders.pinocchio import load_robot_description
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        "Examples need robot_descriptions, "
+        "try `pip install robot_descriptions`"
+    )
 
+robot = load_robot_description(
+        "jvrc_description", root_joint=pin.JointModelFreeFlyer()
+    )
+viz = pin.visualize.MeshcatVisualizer(
+        robot.model, robot.collision_model, robot.visual_model
+    )
+robot.setVisualizer(viz, init=False)
+viz.initViewer(open=True)
+viz.loadViewerModel()
+list_data = [ 8.29756125e-02, -9.10813747e-05,  8.69033893e-03,  7.94971455e-05,
+                -2.00299738e-03, -5.32537164e-06,  9.99997991e-01, -1.82130515e-02,
+                -7.96762498e-05, -2.81783003e-05,  3.98387475e-01, -3.01838539e-05,
+                -3.88145027e-01, -1.79387328e-02, -4.68154345e-05, -3.64688202e-05,
+                3.97755529e-01, -6.64565981e-05, -3.87904610e-01,  0.00000000e+00,
+                0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+                0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+                0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+                0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+                0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+                0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+                0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,
+                0.00000000e+00,  0.00000000e+00,  0.00000000e+00
+]
+q_ref = np.array(list_data)
+configuration = pink.Configuration(robot.model, robot.data, q_ref)
+viz.display(configuration.q)
 T_pred = 100e-3  # (s)
 T_control = 100e-3  # (s)
 simulation_time = 10  # (s)
 prediction_time = 2  # (s)
 g = 9.81
-h = 0.8
-foot_dimensions = [0.3, 0.096]  # length(x), width(y)
-spacing = (0.1, 0.096)  # lateral spacing between feet
+h = pin.centerOfMass(robot.model, robot.data, q_ref)[2] + 0.74
+foot_dimensions = [
+    0.3, 
+    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1])
+    ]  # length(x), width(y)
+spacing = (0.0, np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1]))  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
-duration_step = 0.8  # (s)
+duration_step = 1  # (s)
 steps = int(simulation_time / T_control)
 alpha = 1  # Weight for jerk
 gamma = 1e3  # Weight for zk_ref
@@ -68,6 +116,8 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     left_foot, right_foot = [], []
 
     for i in range(n_iterations):
+        # print(vars(robot_mpc))
+        # sys.exit()
         curr_com, _, _, curr_cop, curr_left, curr_right = robot_mpc.get_positional_attributes()
         com_x.append(curr_com[0])
         com_y.append(curr_com[1])
@@ -89,141 +139,90 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     [(0.0, -0.325), (0.5249999999999999, -0.325), (1.2249999999999999, -0.325), (1.9249999999999998, -0.325), (2.625, -0.325), (3.325, -0.325)]
     """
     # todo: Start with left
-    
-    import meshcat_shapes
-    import pinocchio as pin
-    import qpsolvers
-    from loop_rate_limiters import RateLimiter
-
-    import pink
-    from pink import solve_ik
-    from pink.tasks import FrameTask, PostureTask
-    from bezier_curve import BezierCurve
-    from utils import get_control_points
-
-    try:
-        from robot_descriptions.loaders.pinocchio import load_robot_description
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError(
-            "Examples need robot_descriptions, "
-            "try `pip install robot_descriptions`"
-        )
-
-    robot = load_robot_description(
-        "jvrc_description", root_joint=pin.JointModelFreeFlyer()
-    )
-    # print([robot.model.names[i] for i in range(len(robot.model.names))])
-    # sys.exit()
-    viz = pin.visualize.MeshcatVisualizer(
-        robot.model, robot.collision_model, robot.visual_model
-    )
-    robot.setVisualizer(viz, init=False)
-    viz.initViewer(open=True)
-    viz.loadViewerModel()
-
-    configuration = pink.Configuration(robot.model, robot.data, robot.q0)
-    viz.display(configuration.q)
-
     left_foot_task = FrameTask(
-        "l_ankle", position_cost=1.0, orientation_cost=3.0
+        "l_ankle", position_cost=100.0, orientation_cost=1.0
     )
-    left_foot_task_2 = FrameTask(
-        "l_ankle", position_cost=3.0, orientation_cost=1.0
+    left_foot_fixed_task = FrameTask(
+        "l_ankle", position_cost=100., orientation_cost=1.0
     )
-    # pelvis_task = FrameTask("PELVIS_S", position_cost=[0.0, 1e-1, 2.0], orientation_cost=2.0)
-    pelvis_task = FrameTask("PELVIS_S", position_cost=0.0, orientation_cost=2.0)
-
+    pelvis_task = FrameTask(
+        "PELVIS_S", position_cost=[1e-2, 1e-2, 1.0], orientation_cost=3.0
+    )
     right_foot_task = FrameTask(
-        "r_ankle", position_cost=2.0, orientation_cost=3.0
+        "r_ankle", position_cost=100.0, orientation_cost=1.0
     )
-    right_foot_task_2 = FrameTask(
-        "r_ankle", position_cost=3.0, orientation_cost=1.0
+    right_foot_fixed_task = FrameTask(
+        "r_ankle", position_cost=100., orientation_cost=1.0
     )
-    left_knee_task = FrameTask("L_KNEE", position_cost=0.0, orientation_cost=1.0)
-    right_knee_task = FrameTask("R_KNEE", position_cost=0.0, orientation_cost=1.0)
+    posture_task = PostureTask(
+        cost=1.0,
+    )
+    posture_task.set_target(q_ref)
+    tasks = [
+        left_foot_task, 
+        # left_foot_fixed_task,
+        posture_task,
+        pelvis_task,
+        right_foot_task,
+        # right_foot_fixed_task,
 
-    posture_task = PostureTask(cost=.5e-1)
-    tasks = [left_foot_task, 
-             pelvis_task,
-            posture_task,
-            right_knee_task,
-            left_foot_task_2,
-            right_foot_task_2,
-            left_knee_task,
-            right_foot_task, #
-            ]
+    ]
+    # pelvis_task.set_target(configuration.get_transform_frame_to_world("PELVIS_S"))
+    # posture_task.set_target_from_configuration(configuration)
 
-    pelvis_pose = configuration.get_transform_frame_to_world("PELVIS_S").copy()
-    meshcat_shapes.frame(viz.viewer["pelvis_pose"])
-    viz.viewer["pelvis_pose"].set_transform(pelvis_pose.np)
-    pelvis_task.set_target(pelvis_pose)
-    viewer = viz.viewer
-    transform_l_ankle_target_to_init = pin.SE3(
-        np.eye(3), np.array([0.0, 0.0, 0.0])
-    )
-    transform_r_ankle_target_to_init = pin.SE3(
-        np.eye(3), np.array([-0.0, 0.0, 0.0])
-    )
+    pelvis_task.set_target_from_configuration(configuration)
 
     left_foot_task.set_target(
         configuration.get_transform_frame_to_world("l_ankle")
-        * transform_l_ankle_target_to_init
     )
-    left_foot_task_2.set_target(
+    left_foot_fixed_task.set_target(
         configuration.get_transform_frame_to_world("l_ankle")
-        * transform_l_ankle_target_to_init
     )
+
     right_foot_task.set_target(
         configuration.get_transform_frame_to_world("r_ankle")
-        * transform_r_ankle_target_to_init
     )
-    right_foot_task_2.set_target(
+    right_foot_fixed_task.set_target(
         configuration.get_transform_frame_to_world("r_ankle")
-        * transform_r_ankle_target_to_init
     )
-    # pelvis_task.set_target(
-    #     configuration.get_transform_frame_to_world("PELVIS_S")
-    # )
-    pelvis_task.set_target_from_configuration(configuration)
-    posture_task.set_target_from_configuration(configuration)
-    right_knee_task.set_target_from_configuration(configuration)
-    left_knee_task.set_target_from_configuration(configuration)
-    # print(configuration.get_transform_frame_to_world("PELVIS_S"))
-    # import sys
-    # sys.exit()
-    meshcat_shapes.frame(viewer["right_foot_target"], opacity=0.5)
-    meshcat_shapes.frame(viewer["right_foot"], opacity=1.0)
-    meshcat_shapes.frame(viewer["left_foot_target"], opacity=0.5)
-    meshcat_shapes.frame(viewer["left_foot"], opacity=1.0)
 
+    # pelvis_task.set_target_from_configuration(configuration)
     # Select QP solver
     solver = qpsolvers.available_solvers[0]
     if "quadprog" in qpsolvers.available_solvers:
         solver = "quadprog"
-
+    viewer = viz.viewer
+    meshcat_shapes.frame(viewer["r_ankle"], opacity=1.)
+    meshcat_shapes.frame(viewer["r_ankle_target"], opacity=.5)
+    meshcat_shapes.frame(viewer["l_ankle"], opacity=1.)
+    meshcat_shapes.frame(viewer["l_ankle_target"], opacity=.5)
     rate = RateLimiter(frequency=50.0)
     dt = rate.period
-    
-    for i in range(max(len(left_foot_unique), len(right_foot_unique)) - 1):
-        t = 0.0  # [s]
-        # src_r_fixed = np.array([*right_foot_unique[i], -.746])
-        src_r_fixed = configuration.get_transform_frame_to_world("r_ankle").translation
-        control_points_l = get_control_points(configuration.get_transform_frame_to_world("l_ankle").translation, np.array([*left_foot_unique[i + 1], -.746]), dz=.2)
+    t = 0.0  # [s]
+    i = 0
+    # left_foot_fixed_target = left_foot_fixed_task.transform_target_to_world
+    # left_foot_fixed_task.set_target(left_foot_fixed_task)
+    src_r = configuration.get_transform_frame_to_world("r_ankle").copy()
+    src_r = src_r.translation
+    # dst_r = src_r.copy()
+    # dst_r[0] += .2
+    src_l = configuration.get_transform_frame_to_world("l_ankle").copy()
+    src_l = src_l.translation
+    # dst_l = src_l.copy()        
+    # dst_l[0] += .25
+    # import time
+    # time.sleep(10)
+    for i in range(len(right_foot_unique)- 1):
+        t = 0.0
+        dst_l = np.array([*left_foot_unique[i + 1], src_l[2]])
+        control_points_l = get_control_points(src_l, dst_l, dz=.05)
         curve_l = BezierCurve(control_points_l)
-        #left loop
         while t <= 1:
             left_foot_target = left_foot_task.transform_target_to_world
-            right_foot_target_2 = right_foot_task_2.transform_target_to_world
-            right_foot_target_2.translation = src_r_fixed
             left_foot_target.translation = curve_l.get_position_at(t)
-            left_foot_task.set_target(left_foot_target)
-            right_foot_task_2.set_target(right_foot_target_2)
-            viewer["left_foot_target"].set_transform(left_foot_target.np)
-            viewer["left_foot"].set_transform(
-            configuration.get_transform_frame_to_world(
-                left_foot_task.body
-            ).np
-        )
+            viewer["l_ankle_target"].set_transform(left_foot_target.np)
+            viewer["l_ankle"].set_transform(configuration.get_transform_frame_to_world(left_foot_task.body).np)
+            # Compute velocity and integrate it into next configuration
             velocity = solve_ik(configuration, tasks, dt, solver=solver)
             configuration.integrate_inplace(velocity, dt)
 
@@ -231,24 +230,22 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
             viz.display(configuration.q)
             # rate.sleep()
             t += dt
-        t = 0.0
-        # src_l_fixed = np.array([*left_foot_unique[i + 1], -.746])
-        src_l_fixed = configuration.get_transform_frame_to_world("l_ankle").translation
-        control_points_r = get_control_points(configuration.get_transform_frame_to_world("r_ankle").translation, np.array([*right_foot_unique[i + 1], -.746]))
+        # src_l = dst_l.copy()
+        src_l = configuration.get_transform_frame_to_world(left_foot_task.body).translation
+        dst_r = np.array([*right_foot_unique[i + 1], src_r[2]])
+        control_points_r = get_control_points(src_r, dst_r, dz=.05)
         curve_r = BezierCurve(control_points_r)
+        t = 0.0
         while t <= 1:
+            # Update task targets
             right_foot_target = right_foot_task.transform_target_to_world
-            left_foot_target_2 = left_foot_task_2.transform_target_to_world
-            left_foot_target_2.translation = src_l_fixed
             right_foot_target.translation = curve_r.get_position_at(t)
-            right_foot_task.set_target(right_foot_target)
-            left_foot_task_2.set_target(left_foot_target_2)
-            viewer["right_foot_target"].set_transform(right_foot_target.np)
-            viewer["right_foot"].set_transform(
-            configuration.get_transform_frame_to_world(
-                right_foot_task.body
-            ).np
-        )
+            
+            viewer["r_ankle_target"].set_transform(right_foot_target.np)
+            viewer["r_ankle"].set_transform(configuration.get_transform_frame_to_world(right_foot_task.body).np)
+            # viewer["l_ankle_target"].set_transform(left_foot_fixed_target.np)
+            viewer["l_ankle"].set_transform(configuration.get_transform_frame_to_world(left_foot_fixed_task.body).np)
+            # Compute velocity and integrate it into next configuration
             velocity = solve_ik(configuration, tasks, dt, solver=solver)
             configuration.integrate_inplace(velocity, dt)
 
@@ -256,20 +253,12 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
             viz.display(configuration.q)
             # rate.sleep()
             t += dt
-        #right_loop
-
-    # fig, ax = plt.subplots()
-    # ax.plot(cop_x, cop_y, label="cop", color="green")
-    # ax.plot(com_x, com_y, label="com", color="red")
-    # # Plot footsteps
-    # plot_foot_steps(ax, (zk_min_x + zk_max_x) / 2, (zk_min_y + zk_max_y) / 2, theta_ref, foot_dimensions, spacing[1])
-    # # Display the plot
-    # plt.legend()
-    # ax.set_xlabel("x(m)")
-    # ax.set_ylabel("y(m)")
-    # # ax.set_ylim((-0.03, 0.03))
-    # plt.title("Trajectory of robot")
-    # plt.show()
+        # src_r = dst_r.copy()
+        src_r = configuration.get_transform_frame_to_world(right_foot_task.body).translation
+        # dst_r[0] += .2
+        
+        # dst_l[0] += .2
+    # print(configuration.q)
 
 
 def main():
