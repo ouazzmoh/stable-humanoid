@@ -35,6 +35,10 @@ class Robot:
         self.left_foot_position = None
         self.right_foot_position = None
 
+        self.offline_com_trajectory = []
+        self.offline_left_foot_trajectory = []
+        self.offline_right_foot_trajectory = []
+
     def initialize_position(self,
                             xk,
                             yk,
@@ -119,6 +123,21 @@ class Robot:
         self.com_acceleration = np.array([xk[2], yk[2]])
         self.cop_position = (np.array([1, 0, -self.h / g]) @ xk, np.array([1, 0, -self.h / g]) @ yk)
         self.set_foot_positions_closed_loop(steps)
+
+        self.offline_com_trajectory.append(self.com_position)
+        self.offline_left_foot_trajectory.append(self.left_foot_position)
+        self.offline_right_foot_trajectory.append(self.right_foot_position)
+        assert(len(self.offline_left_foot_trajectory) == len(self.offline_right_foot_trajectory) ==
+               len(self.offline_com_trajectory))
+
+        for i in range(len(self.offline_com_trajectory)):
+            if self.offline_com_trajectory[i] is not None:
+                self.offline_com_trajectory[i] = tuple(self.offline_com_trajectory[i])
+            if self.offline_left_foot_trajectory[i] is not None:
+                self.offline_left_foot_trajectory[i] = tuple(self.offline_left_foot_trajectory[i])
+            if self.offline_right_foot_trajectory[i] is not None:
+                self.offline_right_foot_trajectory[i] = tuple(self.offline_right_foot_trajectory[i])
+
 
 
 
