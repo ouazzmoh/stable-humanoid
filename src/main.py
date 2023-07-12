@@ -17,6 +17,7 @@ import pinocchio as pin
 import pink
 from pink import solve_ik
 from pink.tasks import FrameTask, PostureTask
+from com_task import ComTask
 from utils import *
 from bezier_curve import BezierCurve
 
@@ -127,13 +128,14 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         right_foot.append(curr_right)
         # Run the MPC iteration and update the robot state
         controller.MPC_iteration(i, N, T)
-
+    # print(len(com_x))
 
     left_foot_unique = remove_duplicates(left_foot)
     right_foot_unique = remove_duplicates(right_foot)
-
-    print(left_foot_unique)
-    print(right_foot_unique)
+    # print(len(left_foot_unique))
+    # sys.exit()
+    # print(left_foot_unique)
+    # print(right_foot_unique)
     """
     [(0.0, 0.325), (0.175, 0.325), (0.8749999999999999, 0.325), (1.575, 0.325), (2.2749999999999995, 0.325), (2.9749999999999996, 0.325)]
     [(0.0, -0.325), (0.5249999999999999, -0.325), (1.2249999999999999, -0.325), (1.9249999999999998, -0.325), (2.625, -0.325), (3.325, -0.325)]
@@ -154,6 +156,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     right_foot_fixed_task = FrameTask(
         "r_ankle", position_cost=100., orientation_cost=1.0
     )
+    com_task = ComTask(position_cost=[2.0, 2.0, 1.0])
     posture_task = PostureTask(
         cost=1.0,
     )
@@ -164,6 +167,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         posture_task,
         pelvis_task,
         right_foot_task,
+        # com_task,
         # right_foot_fixed_task,
 
     ]
@@ -171,7 +175,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     # posture_task.set_target_from_configuration(configuration)
 
     pelvis_task.set_target_from_configuration(configuration)
-
+    com_task.set_target_from_configuration(configuration)
     left_foot_task.set_target(
         configuration.get_transform_frame_to_world("l_ankle")
     )
@@ -212,6 +216,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     # dst_l[0] += .25
     # import time
     # time.sleep(10)
+    i_com = 0
     for i in range(len(right_foot_unique)- 1):
         t = 0.0
         dst_l = np.array([*left_foot_unique[i + 1], src_l[2]])
@@ -219,7 +224,11 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         curve_l = BezierCurve(control_points_l)
         while t <= 1:
             left_foot_target = left_foot_task.transform_target_to_world
+            com_target = com_task.transform_target_to_world
             left_foot_target.translation = curve_l.get_position_at(t)
+            com_target.translation[0] = .0
+            com_target.translation[1] = 0.0
+            com_task.set_target(com_target)
             viewer["l_ankle_target"].set_transform(left_foot_target.np)
             viewer["l_ankle"].set_transform(configuration.get_transform_frame_to_world(left_foot_task.body).np)
             # Compute velocity and integrate it into next configuration
@@ -236,11 +245,15 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         control_points_r = get_control_points(src_r, dst_r, dz=.05)
         curve_r = BezierCurve(control_points_r)
         t = 0.0
+        i_com += 1
         while t <= 1:
             # Update task targets
             right_foot_target = right_foot_task.transform_target_to_world
+            com_target = com_task.transform_target_to_world
             right_foot_target.translation = curve_r.get_position_at(t)
-            
+            com_target.translation[0] = .0
+            com_target.translation[1] = 0.0
+            com_task.set_target(com_target)
             viewer["r_ankle_target"].set_transform(right_foot_target.np)
             viewer["r_ankle"].set_transform(configuration.get_transform_frame_to_world(right_foot_task.body).np)
             # viewer["l_ankle_target"].set_transform(left_foot_fixed_target.np)
@@ -253,6 +266,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
             viz.display(configuration.q)
             # rate.sleep()
             t += dt
+        i_com += 1
         # src_r = dst_r.copy()
         src_r = configuration.get_transform_frame_to_world(right_foot_task.body).translation
         # dst_r[0] += .2
