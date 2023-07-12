@@ -114,7 +114,6 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
     # Run the MPC
     com_x, com_y, cop_x, cop_y = [], [], [], []
-    left_foot, right_foot = [], []
 
     for i in range(n_iterations):
         # print(vars(robot_mpc))
@@ -124,18 +123,35 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         com_y.append(curr_com[1])
         cop_x.append(curr_cop[0])
         cop_y.append(curr_cop[1])
-        left_foot.append(curr_left)
-        right_foot.append(curr_right)
         # Run the MPC iteration and update the robot state
         controller.MPC_iteration(i, N, T)
     # print(len(com_x))
 
-    left_foot_unique = remove_duplicates(left_foot)
-    right_foot_unique = remove_duplicates(right_foot)
-    # print(len(left_foot_unique))
-    # sys.exit()
-    # print(left_foot_unique)
-    # print(right_foot_unique)
+    seen = []
+    res = []
+    left_foot = robot_mpc.offline_left_foot_trajectory
+    right_foot = robot_mpc.offline_right_foot_trajectory
+    com = robot_mpc.offline_com_trajectory
+
+    corresp_com_left = []
+    corresp_com_right = []
+
+    left_indices = group_not_none(left_foot)
+    right_indices = group_not_none(right_foot)
+
+    for k in range(len(left_indices)-1):
+        corresp_com_left.append(com[left_indices[k][1]:left_indices[k+1][0]])
+    for k in range(len(right_indices)-1):
+        corresp_com_right.append(com[right_indices[k][1]:right_indices[k+1][0]])
+
+    left_foot_unique = [left_foot[i[0]] for i in left_indices]
+    right_foot_unique = [right_foot[i[0]] for i in right_indices]
+
+    print("left foot ->", left_foot_unique)
+    print("right foot ->", right_foot_unique)
+    print("com left ->", corresp_com_left)
+    print("com right -> ", corresp_com_right)
+
     """
     [(0.0, 0.325), (0.175, 0.325), (0.8749999999999999, 0.325), (1.575, 0.325), (2.2749999999999995, 0.325), (2.9749999999999996, 0.325)]
     [(0.0, -0.325), (0.5249999999999999, -0.325), (1.2249999999999999, -0.325), (1.9249999999999998, -0.325), (2.625, -0.325), (3.325, -0.325)]

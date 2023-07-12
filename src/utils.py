@@ -754,3 +754,26 @@ def get_control_points(src, dest, dx=0.0, dy=0.0, dz=0.0):
 def get_mid(src: np.ndarray, dest: np.ndarray) -> np.ndarray:
     mid = src + dest / 2
     return mid
+
+
+def group_not_none(lst):
+    """
+    Return the start and end indices of the groups of non-None values in the list.
+    Args:
+        lst:
+
+    Returns:
+
+    """
+    start = None  # Start index of the current group
+    groups = []  # List of groups
+    for i, x in enumerate(lst):
+        if x is not None and start is None:
+            start = i  # Start a new group
+        elif x is None and start is not None:
+            groups.append((start, i - 1))  # End the current group
+            start = None
+    # If the list ended with a group, add it
+    if start is not None:
+        groups.append((start, len(lst) - 1))
+    return groups
