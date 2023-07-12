@@ -172,7 +172,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     right_foot_fixed_task = FrameTask(
         "r_ankle", position_cost=100., orientation_cost=1.0
     )
-    com_task = ComTask(position_cost=[2.0, 2.0, 1.0])
+    com_task = ComTask(position_cost=[100.0, 100.0, 1.0])
     posture_task = PostureTask(
         cost=1.0,
     )
@@ -238,13 +238,14 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         dst_l = np.array([*left_foot_unique[i + 1], src_l[2]])
         control_points_l = get_control_points(src_l, dst_l, dz=.05)
         curve_l = BezierCurve(control_points_l)
+        com_l = np.linspace(corresp_com_left[i][0], corresp_com_left[i][-1], 50)
         while t <= 1:
             left_foot_target = left_foot_task.transform_target_to_world
             com_target = com_task.transform_target_to_world
             left_foot_target.translation = curve_l.get_position_at(t)
-            com_target.translation[0] = .0
-            com_target.translation[1] = 0.0
-            com_task.set_target(com_target)
+            com_target.translation[0] = com_l[int(t * 50)][0]
+            com_target.translation[1] = com_l[int(t * 50)][1]
+            # com_task.set_target(com_target)
             viewer["l_ankle_target"].set_transform(left_foot_target.np)
             viewer["l_ankle"].set_transform(configuration.get_transform_frame_to_world(left_foot_task.body).np)
             # Compute velocity and integrate it into next configuration
@@ -260,6 +261,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         dst_r = np.array([*right_foot_unique[i + 1], src_r[2]])
         control_points_r = get_control_points(src_r, dst_r, dz=.05)
         curve_r = BezierCurve(control_points_r)
+        com_r = np.linspace(corresp_com_right[i][0], corresp_com_right[i][-1], 50)
         t = 0.0
         i_com += 1
         while t <= 1:
@@ -267,9 +269,9 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
             right_foot_target = right_foot_task.transform_target_to_world
             com_target = com_task.transform_target_to_world
             right_foot_target.translation = curve_r.get_position_at(t)
-            com_target.translation[0] = .0
-            com_target.translation[1] = 0.0
-            com_task.set_target(com_target)
+            com_target.translation[0] = com_r[int(t * 50)][0]
+            com_target.translation[1] = com_r[int(t * 50)][1]
+            # com_task.set_target(com_target)
             viewer["r_ankle_target"].set_transform(right_foot_target.np)
             viewer["r_ankle"].set_transform(configuration.get_transform_frame_to_world(right_foot_task.body).np)
             # viewer["l_ankle_target"].set_transform(left_foot_fixed_target.np)
