@@ -8,6 +8,28 @@ import visuals
 
 
 class MPC:
+    """
+    This class represents the MPC controller, which is used to generate stable walking for the robot.
+
+    Attributes:
+        simulation_time: total simulation time (s)
+        prediction_time: time for the prediction horizon (s)
+        T_control: sampling time for the control (s)
+        T_pred: sampling time for the prediction (s)
+        robot: robot object
+        footstep_planner: footstep planner object, which is used to generate the reference trajectories
+        alpha: weight for the jerk
+        beta: weight for the velocity
+        gamma: weight for the reference trajectory
+        xk_init: initial state of the robot in the x direction (position, velocity, acceleration)
+        yk_init: initial state of the robot in the y direction (position, velocity, acceleration)
+        name (str): name of the controller
+        write_hdf5 (bool): whether to write the results to a hdf5 file
+        solver (str): solver to use for the QP problem
+        g (float): gravity constant
+        debug (bool): whether to plot intermediate trajectories for the robot
+        perturbations (List[Perturbation]): list of perturbations to apply to the robot
+    """
     def __init__(self,
                  simulation_time: float,
                  prediction_time : float,
@@ -61,6 +83,39 @@ class MPC:
                             speed_ref_y_pred : np.ndarray,
                             prev_x : np.ndarray,
                             prev_y : np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Represents the objective function of the QP problem to minimize,
+                in :math:`[\mathrm{cost}] / [\mathrm{dimensionless}]`. The function
+                is composed of three parts:
+
+                1. :math:`\frac{\alpha}{2} \|Xdddot_k_\|^2` This term corresponds to
+                the error related to the jerk
+
+                2. :math:`\frac{\beta}{2} \|Xdot_{k+1} - Xdot_{k+1}^{ref}\|^2` This
+                term corresponds to the difference between the actual and reference
+                speed.
+
+                3. :math:`\frac{\gamma}{2} \|Z_{k}^{x} - Z_{k}^{x_ref}\|^2` This term
+                corresponds to the error in the position of the center of pressure (CoP)
+                in the x direction.
+
+                In addition to the same terms for the y direction.
+
+        Args:
+            T: Sampling period
+            zk_ref_pred_x: cop reference in the x direction
+            zk_ref_pred_y: cop reference in the y direction
+            speed_ref_x_pred: speed reference in the x direction
+            speed_ref_y_pred: speed reference in the y direction
+            prev_x: last state before the resolution of the QP in the x direction :
+            (com_position, com_speed, com_acceleration)
+            prev_y: last state before the resolution of the QP in the y direction
+
+        Returns:
+            Q: Quadratic term of the objective function
+            p: Linear term of the objective function
+
+        """
         # Construct the objective function
         # Problem matrices
         N = int(self.prediction_time / self.T_pred)
@@ -84,6 +139,20 @@ class MPC:
                               zk_ref_pred_y : np.ndarray,
                               prev_x : np.ndarray,
                               prev_y : np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Represents the constraints of the QP problem to minimize:
+        Assert that the cop stays with the bounds of the support polygon by asserting the condition :
+        Args:
+            T: sampling period
+            theta_ref_pred: reference angle of the robot
+            zk_ref_pred_x: reference cop in the x direction
+            zk_ref_pred_y: reference cop in the y direction
+            prev_x: last state before the resolution of the QP in the x direction :
+            prev_y: last state before the resolution of the QP in the y direction
+
+        Returns:
+
+        """
 
         N = int(self.prediction_time / self.T_pred)
         foot_dimensions = self.robot.foot_dimensions
@@ -204,6 +273,18 @@ class MPC:
 
 
     def run_MPC(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Run the full iterations of the MPC
+        Returns:
+            com_x: The x position of the center of mass
+            com_y: The y position of the center of mass
+            com_velocity_x: The x velocity of the center of mass
+            com_velocity_y: The y velocity of the center of mass
+            com_acceleration_x: The x acceleration of the center of mass
+            com_acceleration_y: The y acceleration of the center of mass
+            cop_x: The x position of the center of pressure
+            cop_y: The y position of the center of pressure
+        """
         # Outputs
         com_x, com_y = [], []
         com_velocity_x, com_velocity_y = [], []

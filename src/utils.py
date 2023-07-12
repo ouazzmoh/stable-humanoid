@@ -730,10 +730,6 @@ def remove_duplicates(lst):
                 seen.append(item_tuple)
                 res.append(tuple(item))
     return res
-
-
-
-
 def Bernstein(n, k, x):
     coeff = binom(n, k)
     return coeff * x ** k * (1 - x) ** (n - k)
