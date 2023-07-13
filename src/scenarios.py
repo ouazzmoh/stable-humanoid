@@ -138,6 +138,7 @@ def construct_zmin_zmax_alt_forward(total_duration, duration_double_init, durati
                                       total_duration,
                                       z_min=-(foot_size + spacing/2) + step_i * shift,
                                       z_max=0 + step_i * shift,
+                                      which_foot="right",
                                       shift=0))
             else:
                 # Left support
@@ -145,6 +146,7 @@ def construct_zmin_zmax_alt_forward(total_duration, duration_double_init, durati
                                       (step_i+1)*duration_step + duration_double_init,
                                       z_min=-(foot_size + spacing/2) + step_i * shift,
                                       z_max=0 + step_i * shift,
+                                      which_foot="right",
                                       shift=0))
         else:
             if step_i == number_of_steps - 1:
@@ -153,6 +155,7 @@ def construct_zmin_zmax_alt_forward(total_duration, duration_double_init, durati
                                       total_duration,
                                       z_min=0 + step_i * shift,
                                       z_max=foot_size + spacing/2 + step_i * shift,
+                                      which_foot="left",
                                       shift=0))
             else:
                 # Right support
@@ -160,6 +163,7 @@ def construct_zmin_zmax_alt_forward(total_duration, duration_double_init, durati
                                       (step_i + 1) * duration_step + duration_double_init,
                                       z_min=0 + step_i * shift,
                                       z_max=foot_size + spacing/2 + step_i * shift,
+                                      which_foot="left",
                                       shift=0))
     return footsteps
 

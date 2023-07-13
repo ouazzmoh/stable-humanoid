@@ -216,7 +216,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     meshcat_shapes.frame(viewer["r_ankle_target"], opacity=.5)
     meshcat_shapes.frame(viewer["l_ankle"], opacity=1.)
     meshcat_shapes.frame(viewer["l_ankle_target"], opacity=.5)
-    rate = RateLimiter(frequency=50.0)
+    rate = RateLimiter(frequency=200.0)
     dt = rate.period
     t = 0.0  # [s]
     i = 0
@@ -294,7 +294,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
 
 def main():
-    trajectory_type = "forward"
+    trajectory_type = "upwards"
     move(trajectory_type, debug=False)
 
 
