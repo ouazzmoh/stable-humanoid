@@ -52,7 +52,7 @@ class ComTask(Task):
             assert position_cost >= 0.0
         else:  # not isinstance(position_cost, float)
             assert all(cost >= 0.0 for cost in position_cost)
-        self.cost = position_cost
+        self.cost[0:3] = position_cost
     def set_target_from_configuration(
         self, configuration: Configuration
     ) -> None:
@@ -89,7 +89,7 @@ class ComTask(Task):
         current_com_position = pin.centerOfMass(configuration.model,
                                                 configuration.data,
                                                 configuration.q)
-        error = current_com_position - self.transform_target_to_world.translation
+        error =  - current_com_position + self.transform_target_to_world.translation
         return error
     
     def compute_jacobian(self, configuration: Configuration) -> np.ndarray:

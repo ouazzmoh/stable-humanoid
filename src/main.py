@@ -160,19 +160,14 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     left_foot_task = FrameTask(
         "l_ankle", position_cost=100.0, orientation_cost=1.0
     )
-    left_foot_fixed_task = FrameTask(
-        "l_ankle", position_cost=100., orientation_cost=1.0
-    )
+
     pelvis_task = FrameTask(
-        "PELVIS_S", position_cost=[1e-2, 1e-2, 1.0], orientation_cost=3.0
+        "PELVIS_S", position_cost=1.0, orientation_cost=3.0
     )
     right_foot_task = FrameTask(
         "r_ankle", position_cost=100.0, orientation_cost=1.0
     )
-    right_foot_fixed_task = FrameTask(
-        "r_ankle", position_cost=100., orientation_cost=1.0
-    )
-    com_task = ComTask(position_cost=[100.0, 100.0, 1.0])
+    com_task = ComTask(position_cost=100.0)
     posture_task = PostureTask(
         cost=1.0,
     )
@@ -181,9 +176,9 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         left_foot_task, 
         # left_foot_fixed_task,
         posture_task,
-        pelvis_task,
+        # pelvis_task,
         right_foot_task,
-        # com_task,
+        com_task,
         # right_foot_fixed_task,
 
     ]
@@ -195,14 +190,9 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     left_foot_task.set_target(
         configuration.get_transform_frame_to_world("l_ankle")
     )
-    left_foot_fixed_task.set_target(
-        configuration.get_transform_frame_to_world("l_ankle")
-    )
+
 
     right_foot_task.set_target(
-        configuration.get_transform_frame_to_world("r_ankle")
-    )
-    right_foot_fixed_task.set_target(
         configuration.get_transform_frame_to_world("r_ankle")
     )
 
@@ -216,22 +206,17 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     meshcat_shapes.frame(viewer["r_ankle_target"], opacity=.5)
     meshcat_shapes.frame(viewer["l_ankle"], opacity=1.)
     meshcat_shapes.frame(viewer["l_ankle_target"], opacity=.5)
+    meshcat_shapes.frame(viewer["com"], opacity=1., axis_length=1.)
     rate = RateLimiter(frequency=50.0)
     dt = rate.period
     t = 0.0  # [s]
     i = 0
-    # left_foot_fixed_target = left_foot_fixed_task.transform_target_to_world
-    # left_foot_fixed_task.set_target(left_foot_fixed_task)
+
     src_r = configuration.get_transform_frame_to_world("r_ankle").copy()
     src_r = src_r.translation
-    # dst_r = src_r.copy()
-    # dst_r[0] += .2
+
     src_l = configuration.get_transform_frame_to_world("l_ankle").copy()
     src_l = src_l.translation
-    # dst_l = src_l.copy()        
-    # dst_l[0] += .25
-    # import time
-    # time.sleep(10)
     i_com = 0
     for i in range(len(right_foot_unique)- 1):
         t = 0.0
@@ -243,9 +228,10 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
             left_foot_target = left_foot_task.transform_target_to_world
             com_target = com_task.transform_target_to_world
             left_foot_target.translation = curve_l.get_position_at(t)
-            com_target.translation[0] = com_l[int(t * 50)][0]
-            com_target.translation[1] = com_l[int(t * 50)][1]
-            # com_task.set_target(com_target)
+            com_target.translation[0] = com_l[round(t * 50)][0] 
+            com_target.translation[1] = com_l[round(t * 50)][1] 
+            com_task.set_target(com_target)
+            viewer["com"].set_transform(com_target.np)
             viewer["l_ankle_target"].set_transform(left_foot_target.np)
             viewer["l_ankle"].set_transform(configuration.get_transform_frame_to_world(left_foot_task.body).np)
             # Compute velocity and integrate it into next configuration
@@ -269,13 +255,12 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
             right_foot_target = right_foot_task.transform_target_to_world
             com_target = com_task.transform_target_to_world
             right_foot_target.translation = curve_r.get_position_at(t)
-            com_target.translation[0] = com_r[int(t * 50)][0]
-            com_target.translation[1] = com_r[int(t * 50)][1]
-            # com_task.set_target(com_target)
+            com_target.translation[0] = com_r[int(t * 50)][0] 
+            com_target.translation[1] = com_r[int(t * 50)][1] 
+            com_task.set_target(com_target)
+            viewer["com"].set_transform(com_target.np)
             viewer["r_ankle_target"].set_transform(right_foot_target.np)
             viewer["r_ankle"].set_transform(configuration.get_transform_frame_to_world(right_foot_task.body).np)
-            # viewer["l_ankle_target"].set_transform(left_foot_fixed_target.np)
-            viewer["l_ankle"].set_transform(configuration.get_transform_frame_to_world(left_foot_fixed_task.body).np)
             # Compute velocity and integrate it into next configuration
             velocity = solve_ik(configuration, tasks, dt, solver=solver)
             configuration.integrate_inplace(velocity, dt)
