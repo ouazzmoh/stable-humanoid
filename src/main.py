@@ -57,7 +57,7 @@ configuration = pink.Configuration(robot.model, robot.data, q_ref)
 viz.display(configuration.q)
 T_pred = 100e-3  # (s)
 T_control = 100e-3  # (s)
-simulation_time = 10  # (s)
+simulation_time =10  # (s)
 prediction_time = 2  # (s)
 g = 9.81
 h = pin.centerOfMass(robot.model, robot.data, q_ref)[2] + 0.74
@@ -279,7 +279,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
 
 def main():
-    trajectory_type = "forward"
+    trajectory_type = "upwards_turning"
     move(trajectory_type, debug=False)
 
 
