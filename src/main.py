@@ -15,11 +15,10 @@ import qpsolvers
 from loop_rate_limiters import RateLimiter
 import pinocchio as pin
 import pink
-from pink import solve_ik
 from pink.tasks import FrameTask, PostureTask
 from com_task import ComTask
 from utils import *
-from bezier_curve import BezierCurve
+from move_foot import move_foot, get_foot_curve, get_com_positions
 
 try:
     from robot_descriptions.loaders.pinocchio import load_robot_description
@@ -55,7 +54,7 @@ list_data = [ 8.29756125e-02, -9.10813747e-05,  8.69033893e-03,  7.94971455e-05,
                 0.00000000e+00,  0.00000000e+00,  0.00000000e+00
 ]
 q_ref = np.array(list_data)
-robot.q0 = robot.q = q_ref
+robot.q0 = q_ref
 configuration = pink.Configuration(robot.model, robot.data, robot.q0)
 viz.display(configuration.q)
 T_pred = 100e-3  # (s)
@@ -65,13 +64,11 @@ prediction_time = 2  # (s)
 g = 9.81
 h = pin.centerOfMass(configuration.model, configuration.data, configuration.q)[2] + 0.746  # (m)
 foot_dimensions = [
-    0.15, 
-    # np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1])
-    .1
+    0.225, 
+    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1])
     ]  # length(x), width(y)
 spacing = (0.0, 
-        #    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1])
-        .192 / 2
+           np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1])
            )  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 1  # (s)
@@ -79,7 +76,7 @@ steps = int(simulation_time / T_control)
 alpha = 1  # Weight for jerk
 gamma = 1e3  # Weight for zk_ref
 beta = 1   # Weight for velocity
-average_speed = (0.15, 0)
+average_speed = (0.3, 0)
 stop_at = (8, 10)  # (s)
 
 robot_mpc = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1])
@@ -178,30 +175,17 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     posture_task = PostureTask(
         cost=1e-1, # 1e-1
     )
-    neck_task = FrameTask(
-        "NECK_Y", position_cost=1e-1, orientation_cost=1.0
-    )
-    waist_task = FrameTask(
-        "WAIST_R", position_cost=0.0, orientation_cost=1.0
-    )
     posture_task.set_target(robot.q0)
     tasks = [
         left_foot_task, 
-        # left_foot_fixed_task,
         posture_task,
         pelvis_task,
         right_foot_task,
         com_task,
-        # waist_task
-        # neck_task,
-        # right_foot_fixed_task,
+
 
     ]
-    # pelvis_task.set_target(configuration.get_transform_frame_to_world("PELVIS_S"))
-    # posture_task.set_target_from_configuration(configuration)
-    neck_task.set_target_from_configuration(configuration)
-    waist_task.set_target_from_configuration(configuration)
-    # neck_task.set_target(configuration.get_transform_frame_to_world("neck"))
+
     pelvis_task.set_target_from_configuration(configuration)
     com_task.set_target_from_configuration(configuration)
     left_foot_task.set_target(
@@ -213,7 +197,6 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         configuration.get_transform_frame_to_world("r_ankle")
     )
 
-    # pelvis_task.set_target_from_configuration(configuration)
     # Select QP solver
     solver = qpsolvers.available_solvers[0]
     if "quadprog" in qpsolvers.available_solvers:
@@ -225,80 +208,26 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     meshcat_shapes.frame(viewer["l_ankle_target"], opacity=.5)
     meshcat_shapes.frame(viewer["com"], opacity=1., axis_length=1.)
     rate = RateLimiter(frequency=50.0)
-    dt = rate.period
-    t = 0.0  # [s]
-    i = 0
 
     src_r = configuration.get_transform_frame_to_world("r_ankle").copy()
     src_r = src_r.translation
 
     src_l = configuration.get_transform_frame_to_world("l_ankle").copy()
     src_l = src_l.translation
-    i_com = 0
     for i in range(len(right_foot_unique)- 1):
-        t = 0.0
+        #left_foot
         dst_l = np.array([*left_foot_unique[i + 1], src_l[2]])
-        control_points_l = get_control_points(src_l, dst_l, dz=.15)
-        curve_l = BezierCurve(control_points_l)
-        com_l = np.linspace(corresp_com_left[i][0], corresp_com_left[i][-1], 50)
-        while t <= 1:
-            left_foot_target = left_foot_task.transform_target_to_world
-            neck_target = neck_task.transform_target_to_world
-            com_target = com_task.transform_target_to_world
-            left_foot_target.translation = curve_l.get_position_at(t)
-            com_target.translation[0] = com_l[round(t * 50)][0] 
-            com_target.translation[1] = com_l[round(t * 50)][1]
-            neck_target.translation[0] = com_l[round(t * 50)][0]
-            neck_task.set_target(neck_target) 
-            com_task.set_target(com_target)
-            viewer["com"].set_transform(com_target.np)
-            viewer["l_ankle_target"].set_transform(left_foot_target.np)
-            viewer["l_ankle"].set_transform(configuration.get_transform_frame_to_world(left_foot_task.body).np)
-            # Compute velocity and integrate it into next configuration
-            velocity = solve_ik(configuration, tasks, dt, solver=solver)
-            configuration.integrate_inplace(velocity, dt)
-
-            # Visualize result at fixed FPS
-            viz.display(configuration.q)
-            # rate.sleep()
-            t += dt
-        # src_l = dst_l.copy()
+        curve_l = get_foot_curve(src_l, dst_l, dz=.15)
+        com_l = get_com_positions(corresp_com_left[i][0], corresp_com_left[i][-1], 50)
+        move_foot(configuration, tasks, left_foot_task, com_task, curve_l, com_l, solver, rate, viz)
         src_l = configuration.get_transform_frame_to_world(left_foot_task.body).translation
+        #right_foot
         dst_r = np.array([*right_foot_unique[i + 1], src_r[2]])
-        control_points_r = get_control_points(src_r, dst_r, dz=.15)
-        curve_r = BezierCurve(control_points_r)
-        com_r = np.linspace(corresp_com_right[i][0], corresp_com_right[i][-1], 50)
-        t = 0.0
-        i_com += 1
-        while t <= 1:
-            # Update task targets
-            right_foot_target = right_foot_task.transform_target_to_world
-            neck_target = neck_task.transform_target_to_world
-            com_target = com_task.transform_target_to_world
-            right_foot_target.translation = curve_r.get_position_at(t)
-            com_target.translation[0] = com_r[int(t * 50)][0] 
-            com_target.translation[1] = com_r[int(t * 50)][1]
-            neck_target.translation[0] = com_r[int(t * 50)][0]
-            neck_task.set_target(neck_target)
-            com_task.set_target(com_target)
-            viewer["com"].set_transform(com_target.np)
-            viewer["r_ankle_target"].set_transform(right_foot_target.np)
-            viewer["r_ankle"].set_transform(configuration.get_transform_frame_to_world(right_foot_task.body).np)
-            # Compute velocity and integrate it into next configuration
-            velocity = solve_ik(configuration, tasks, dt, solver=solver)
-            configuration.integrate_inplace(velocity, dt)
-
-            # Visualize result at fixed FPS
-            viz.display(configuration.q)
-            # rate.sleep()
-            t += dt
-        i_com += 1
-        # src_r = dst_r.copy()
+        curve_r = get_foot_curve(src_r, dst_r, dz=.15)
+        com_r = get_com_positions(corresp_com_right[i][0], corresp_com_right[i][-1], 50)
+        move_foot(configuration, tasks, right_foot_task, com_task, curve_r, com_r, solver, rate, viz)
         src_r = configuration.get_transform_frame_to_world(right_foot_task.body).translation
-        # dst_r[0] += .2
         
-        # dst_l[0] += .2
-    # print(configuration.q)
 
 
 def main():

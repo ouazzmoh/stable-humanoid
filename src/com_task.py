@@ -24,10 +24,6 @@ class ComTask(Task):
                 cost, in :math:`[\mathrm{cost}] / [\mathrm{m}]`. If this is a
                 vector, the cost is anisotropic and each coordinate corresponds
                 to an axis in the local body frame.
-            orientation_cost: Contribution of orientation errors to the
-                normalized cost, in :math:`[\mathrm{cost}] / [\mathrm{rad}]`.
-                If this is a vector, the cost is anisotropic and each
-                coordinate corresponds to an axis in the local body frame.
             lm_damping: Levenberg-Marquardt damping (see class attributes). The
                 default value is conservatively low.
         """
