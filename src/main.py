@@ -32,6 +32,8 @@ except ModuleNotFoundError:
 robot = load_robot_description(
         "jvrc_description", root_joint=pin.JointModelFreeFlyer()
     )
+# print(list(robot.model.names))
+# sys.exit()
 viz = pin.visualize.MeshcatVisualizer(
         robot.model, robot.collision_model, robot.visual_model
     )
@@ -53,26 +55,31 @@ list_data = [ 8.29756125e-02, -9.10813747e-05,  8.69033893e-03,  7.94971455e-05,
                 0.00000000e+00,  0.00000000e+00,  0.00000000e+00
 ]
 q_ref = np.array(list_data)
-configuration = pink.Configuration(robot.model, robot.data, q_ref)
+robot.q0 = robot.q = q_ref
+configuration = pink.Configuration(robot.model, robot.data, robot.q0)
 viz.display(configuration.q)
 T_pred = 100e-3  # (s)
 T_control = 100e-3  # (s)
 simulation_time =10  # (s)
 prediction_time = 2  # (s)
 g = 9.81
-h = pin.centerOfMass(robot.model, robot.data, q_ref)[2] + 0.74
+h = pin.centerOfMass(configuration.model, configuration.data, configuration.q)[2] + 0.746  # (m)
 foot_dimensions = [
-    0.3, 
-    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1])
+    0.15, 
+    # np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1])
+    .1
     ]  # length(x), width(y)
-spacing = (0.0, np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1]))  # lateral spacing between feet
+spacing = (0.0, 
+        #    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1])
+        .192 / 2
+           )  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 1  # (s)
 steps = int(simulation_time / T_control)
 alpha = 1  # Weight for jerk
 gamma = 1e3  # Weight for zk_ref
 beta = 1   # Weight for velocity
-average_speed = (0.3, 0)
+average_speed = (0.15, 0)
 stop_at = (8, 10)  # (s)
 
 robot_mpc = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1])
@@ -162,29 +169,39 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     )
 
     pelvis_task = FrameTask(
-        "PELVIS_S", position_cost=1.0, orientation_cost=3.0
+        "PELVIS_S", position_cost=[0.0, 0.0, 1.0], orientation_cost=3.0
     )
     right_foot_task = FrameTask(
         "r_ankle", position_cost=100.0, orientation_cost=1.0
     )
-    com_task = ComTask(position_cost=100.0)
+    com_task = ComTask(position_cost=[1.0, 10.0, 1.0])
     posture_task = PostureTask(
-        cost=1.0,
+        cost=1e-1, # 1e-1
     )
-    posture_task.set_target(q_ref)
+    neck_task = FrameTask(
+        "NECK_Y", position_cost=1e-1, orientation_cost=1.0
+    )
+    waist_task = FrameTask(
+        "WAIST_R", position_cost=0.0, orientation_cost=1.0
+    )
+    posture_task.set_target(robot.q0)
     tasks = [
         left_foot_task, 
         # left_foot_fixed_task,
         posture_task,
-        # pelvis_task,
+        pelvis_task,
         right_foot_task,
         com_task,
+        # waist_task
+        # neck_task,
         # right_foot_fixed_task,
 
     ]
     # pelvis_task.set_target(configuration.get_transform_frame_to_world("PELVIS_S"))
     # posture_task.set_target_from_configuration(configuration)
-
+    neck_task.set_target_from_configuration(configuration)
+    waist_task.set_target_from_configuration(configuration)
+    # neck_task.set_target(configuration.get_transform_frame_to_world("neck"))
     pelvis_task.set_target_from_configuration(configuration)
     com_task.set_target_from_configuration(configuration)
     left_foot_task.set_target(
@@ -221,15 +238,18 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     for i in range(len(right_foot_unique)- 1):
         t = 0.0
         dst_l = np.array([*left_foot_unique[i + 1], src_l[2]])
-        control_points_l = get_control_points(src_l, dst_l, dz=.05)
+        control_points_l = get_control_points(src_l, dst_l, dz=.15)
         curve_l = BezierCurve(control_points_l)
         com_l = np.linspace(corresp_com_left[i][0], corresp_com_left[i][-1], 50)
         while t <= 1:
             left_foot_target = left_foot_task.transform_target_to_world
+            neck_target = neck_task.transform_target_to_world
             com_target = com_task.transform_target_to_world
             left_foot_target.translation = curve_l.get_position_at(t)
             com_target.translation[0] = com_l[round(t * 50)][0] 
-            com_target.translation[1] = com_l[round(t * 50)][1] 
+            com_target.translation[1] = com_l[round(t * 50)][1]
+            neck_target.translation[0] = com_l[round(t * 50)][0]
+            neck_task.set_target(neck_target) 
             com_task.set_target(com_target)
             viewer["com"].set_transform(com_target.np)
             viewer["l_ankle_target"].set_transform(left_foot_target.np)
@@ -245,7 +265,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         # src_l = dst_l.copy()
         src_l = configuration.get_transform_frame_to_world(left_foot_task.body).translation
         dst_r = np.array([*right_foot_unique[i + 1], src_r[2]])
-        control_points_r = get_control_points(src_r, dst_r, dz=.05)
+        control_points_r = get_control_points(src_r, dst_r, dz=.15)
         curve_r = BezierCurve(control_points_r)
         com_r = np.linspace(corresp_com_right[i][0], corresp_com_right[i][-1], 50)
         t = 0.0
@@ -253,10 +273,13 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         while t <= 1:
             # Update task targets
             right_foot_target = right_foot_task.transform_target_to_world
+            neck_target = neck_task.transform_target_to_world
             com_target = com_task.transform_target_to_world
             right_foot_target.translation = curve_r.get_position_at(t)
             com_target.translation[0] = com_r[int(t * 50)][0] 
-            com_target.translation[1] = com_r[int(t * 50)][1] 
+            com_target.translation[1] = com_r[int(t * 50)][1]
+            neck_target.translation[0] = com_r[int(t * 50)][0]
+            neck_task.set_target(neck_target)
             com_task.set_target(com_target)
             viewer["com"].set_transform(com_target.np)
             viewer["r_ankle_target"].set_transform(right_foot_target.np)
@@ -279,7 +302,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
 
 def main():
-    trajectory_type = "upwards_turning"
+    trajectory_type = "forward"
     move(trajectory_type, debug=False)
 
 
