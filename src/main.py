@@ -28,8 +28,6 @@ except ModuleNotFoundError:
     )
 
 robot = load_robot_description("jvrc_description", root_joint=pin.JointModelFreeFlyer())
-# print(list(robot.model.names))
-# sys.exit()
 viz = pin.visualize.MeshcatVisualizer(
     robot.model, robot.collision_model, robot.visual_model
 )
