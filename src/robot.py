@@ -59,7 +59,7 @@ class Robot:
         self.left_foot_position = np.array([xk[0], yk[0] + self.spacing_y/2 + self.foot_dimensions[1]/2])
 
     def set_foot_positions_closed_loop(self,
-                                       steps: List[Tuple[float, float, str]])-> None:
+                                       steps: List[Tuple[float, float, str, float]])-> None:
         """
         Sets the position of the left and right foot based on the current step.
         Using the current cop position associated to the robot, the foot position is set to the closest step.
@@ -71,7 +71,7 @@ class Robot:
         Returns:
 
         """
-        foot_position = np.array([steps[0][0], steps[0][1]])
+        foot_position = np.array([steps[0][0], steps[0][1], steps[0][3]])
         foot = steps[0][2]
         if foot == "left":
             self.left_foot_position = foot_position
@@ -80,8 +80,8 @@ class Robot:
             self.right_foot_position = foot_position
             self.left_foot_position = None
         elif foot == "double_support":
-            self.right_foot_position = foot_position - np.array([0, self.spacing_y / 2 + self.foot_dimensions[1] / 2])
-            self.left_foot_position = foot_position + np.array([0, self.spacing_y / 2 + self.foot_dimensions[1] / 2])
+            self.right_foot_position = foot_position - np.array([0, self.spacing_y / 2 + self.foot_dimensions[1] / 2, 0])
+            self.left_foot_position = foot_position + np.array([0, self.spacing_y / 2 + self.foot_dimensions[1] / 2, 0])
         min_dist = abs((self.cop_position[0] - foot_position[0]) ** 2 + (self.cop_position[1] - foot_position[1]) ** 2)
         for step in steps:
             dist = abs((self.cop_position[0] - step[0]) ** 2 + (self.cop_position[1] - step[1]) ** 2)
@@ -89,22 +89,22 @@ class Robot:
             if dist < min_dist:
                 min_dist = dist
                 if foot == "left":
-                    self.left_foot_position = np.array([step[0], step[1]])
+                    self.left_foot_position = np.array([step[0], step[1], step[3]])
                     self.right_foot_position = None
                 elif foot == "right":
-                    self.right_foot_position = np.array([step[0], step[1]])
+                    self.right_foot_position = np.array([step[0], step[1], step[3]])
                     self.left_foot_position = None
                 else:
-                    foot_position = np.array([step[0], step[1]])
+                    foot_position = np.array([step[0], step[1], step[3]])
                     self.right_foot_position = foot_position - np.array(
-                        [0, self.spacing_y / 2 + self.foot_dimensions[1] / 2])
+                        [0, self.spacing_y / 2 + self.foot_dimensions[1] / 2, 0])
                     self.left_foot_position = foot_position + np.array(
-                        [0, self.spacing_y / 2 + self.foot_dimensions[1] / 2])
+                        [0, self.spacing_y / 2 + self.foot_dimensions[1] / 2, 0])
 
     def set_positional_attributes(self,
                                   xk: Tuple[float, float, float],
                                   yk: Tuple[float, float, float],
-                                  steps: List[Tuple[float, float, str]],
+                                  steps: List[Tuple[float, float, str, float]],
                                   g: float) -> None:
         """
         Sets the position of the robot based on the current state.
