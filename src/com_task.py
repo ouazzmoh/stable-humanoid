@@ -27,6 +27,7 @@ class ComTask(Task):
             lm_damping: Levenberg-Marquardt damping (see class attributes). The
                 default value is conservatively low.
         """
+        super().__init__()
         self.cost = np.ones(3)
         self.lm_damping = lm_damping
         self.transform_target_to_world = None

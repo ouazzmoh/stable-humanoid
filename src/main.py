@@ -105,8 +105,8 @@ foot_dimensions = [
     np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1]),
 ]  # length(x), width(y)
 spacing = (
-    0.0,
-    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1] + .6),
+    0.1,
+    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1] + .4),
 )  # lateral spacing between feet
 duration_double_init = .8  # (s)
 duration_step = .8  # (s)
@@ -214,8 +214,13 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     for k in range(len(right_indices) - 1):
         corresp_com_right.append(com[right_indices[k][1] : right_indices[k + 1][0]])
 
-    left_foot_unique = [left_foot[i[0]] for i in left_indices]
-    right_foot_unique = [right_foot[i[0]] for i in right_indices]
+    left_foot_unique = [left_foot[i[0]][:-1]for i in left_indices]
+    right_foot_unique = [right_foot[i[0]][:-1] for i in right_indices]
+    left_foot_orientation = [left_foot[i[0]][-1] for i in left_indices]
+    right_foot_orientation = [right_foot[i[0]][-1] for i in right_indices]
+
+    print(left_foot_orientation)
+    print(right_foot_orientation)
 
     print("left foot ->", left_foot_unique)
     print("right foot ->", right_foot_unique)
