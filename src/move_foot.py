@@ -37,7 +37,7 @@ def move_foot(configuration : pink.Configuration,
         viz: Meshcat visualizer for visualization (default: None).
         display: Flag indicating whether to display the robot configuration 
                 (default: True).
-        **kwargs: Additional tasks and their target values.
+        kwargs: Additional tasks and their target values.
 
     """
     t = 0.0
@@ -81,10 +81,10 @@ def get_foot_curve(src:np.ndarray, dst:np.ndarray, dz:Optional[float]=.15):
     Returns:
         BezierCurve: Bezier curve defining the foot trajectory.
     """
-    control_points_l = get_control_points(src, dst, dz=dz)
-    return BezierCurve(control_points_l)
+    control_points = get_control_points(src, dst, dz=dz)
+    return BezierCurve(control_points)
 
-def get_com_positions(src:np.ndarray, dst:np.ndarray, frequency:Optional[float]=50.0):
+def get_com_positions(src: np.ndarray, dst: np.ndarray, frequency: Optional[float]=50.0):
     """
     Generate an array of center of mass positions between the source
     and destination positions.
