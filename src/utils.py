@@ -730,20 +730,43 @@ def remove_duplicates(lst):
                 seen.append(item_tuple)
                 res.append(tuple(item))
     return res
-def Bernstein(n, k, x):
+
+def Bernstein(n: int, k: int, x: float) -> float:
+    """Compute the Bernstein polynomial.
+
+    Given the parameters n, k, and x, this function calculates
+    the value of the Bernstein polynomial at the given point x.
+
+    Args:
+        n: Degree of the polynomial.
+        k: Index of the term.
+        x: Point at which to evaluate the polynomial.
+
+    Returns:
+        float: Value of the Bernstein polynomial at x.
+
+    """
     coeff = binom(n, k)
     return coeff * x ** k * (1 - x) ** (n - k)
 
 
-def get_control_points(src, dest, dx=0.0, dy=0.0, dz=0.0):
-    """_summary_
+def get_control_points(src: np.ndarray, dest: np.ndarray, dx: float=0.0, dy: float=0.0, dz : float=0.0) -> np.ndarray:
+    """Compute control points for a Bezier curve interpolation.
+.
+    Given the source and destination points, this function calculates 
+    the control points for a Bezier curve interpolation. The control 
+    points are calculated by adding an offset to the source and destination points.
 
     Args:
-        src (_type_): _description_
-        dest (_type_): _description_
+        src: Source point coordinates.
+        dest: Destination point coordinates.
+        dx: Offset in the x direction (default: 0.0).
+        dy: Offset in the y direction (default: 0.0).
+        dz: Offset in the z direction (default: 0.0).
 
     Returns:
-        _type_: _description_
+        np.ndarray: Array of control points for the Bezier curve.
+
     """
     P0, P3 = src, dest
     P1 = P0 + np.array([dx, dy, dz])
@@ -752,6 +775,20 @@ def get_control_points(src, dest, dx=0.0, dy=0.0, dz=0.0):
 
 
 def get_mid(src: np.ndarray, dest: np.ndarray) -> np.ndarray:
+    """Compute the midpoint between two arrays.
+
+    Given two numpy arrays `src` and `dest`, this function calculates
+    the midpoint by adding the elements of `src` and `dest` element-wise
+    and dividing the result by 2.
+
+    Args:
+        src: The source point.
+        dest: The destination point.
+
+    Returns:
+        np.ndarray: The computed midpoint array.
+
+    """
     mid = src + dest / 2
     return mid
 

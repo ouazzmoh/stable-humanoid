@@ -16,6 +16,7 @@ def move_foot(configuration : pink.Configuration,
               com_task: ComTask,
               curve: BezierCurve,
               com_positions:np.ndarray,
+              orientation:np.ndarray,
               solver:str,
               rate : RateLimiter,
               viz: Optional[pin.visualize.MeshcatVisualizer]=None,
@@ -48,6 +49,7 @@ def move_foot(configuration : pink.Configuration,
             right_foot_target = foot_task.transform_target_to_world
             com_target = com_task.transform_target_to_world
             right_foot_target.translation = curve.get_position_at(t)
+            right_foot_target.rotation = pin.AngleAxis(orientation[round(t * frequency)], np.array([0, 0, 1])).toRotationMatrix()
             com_target.translation[0] = com_positions[round(t * frequency)][0] 
             com_target.translation[1] = com_positions[round(t * frequency)][1]
             com_task.set_target(com_target)
@@ -65,7 +67,7 @@ def move_foot(configuration : pink.Configuration,
             # Visualize result at fixed FPS
             if display and viz:
                 viz.display(configuration.q)
-            rate.sleep()
+            # rate.sleep()
             t += dt
             
 def get_foot_curve(src:np.ndarray, dst:np.ndarray, dz:Optional[float]=.15):
@@ -96,5 +98,20 @@ def get_com_positions(src: np.ndarray, dst: np.ndarray, frequency: Optional[floa
 
     Returns:
         np.ndarray: Array of center of mass positions.
+    """
+    return np.linspace(src, dst, frequency)
+
+def get_orientations(src: np.ndarray, dst: np.ndarray, frequency: Optional[float]=50.0):
+    """
+    Generate an array of orientations between the source
+    and destination orientations.
+
+    Args:
+        src: Source orientation.
+        dst: Destination orientation.
+        frequency: Number of orientations to generate per unit of time (default: 50.0).
+
+    Returns:
+        np.ndarray: Array of orientations.
     """
     return np.linspace(src, dst, frequency)
