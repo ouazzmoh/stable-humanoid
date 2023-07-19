@@ -44,6 +44,6 @@ class BezierCurve:
         plt.show()
     
     def get_position_at(self, t):
-        assert 0 <= t <= 1, f" t should be between 0 and 1"
+        assert 0 <= t <= 1, " t should be between 0 and 1"
         index = int(t * self.nb_ti) - 1 if t > 0 else 0
         return np.array([self.tx[index], self.ty[index], self.tz[index]])

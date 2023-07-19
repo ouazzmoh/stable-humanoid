@@ -101,7 +101,7 @@ def get_com_positions(src: np.ndarray, dst: np.ndarray, frequency: Optional[floa
     """
     return np.linspace(src, dst, frequency)
 
-def get_orientations(src: np.ndarray, dst: np.ndarray, frequency: Optional[float]=50.0):
+def get_orientations_array(src: np.ndarray, dst: np.ndarray, frequency: Optional[float]=50.0):
     """
     Generate an array of orientations between the source
     and destination orientations.

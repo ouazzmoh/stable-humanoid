@@ -18,7 +18,7 @@ import pink
 from pink.tasks import FrameTask, PostureTask
 from com_task import ComTask
 from utils import *
-from move_foot import move_foot, get_foot_curve, get_com_positions, get_orientations
+from move_foot import move_foot, get_foot_curve, get_com_positions, get_orientations_array
 
 try:
     from robot_descriptions.loaders.pinocchio import load_robot_description
@@ -102,10 +102,10 @@ h = (
 )  # (m)
 foot_dimensions = [
     0.225,
-    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1]) +.1,
+    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1]),
 ]  # length(x), width(y)
 spacing = (
-    0.2,
+    0.0,
     np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1]),
 )  # lateral spacing between feet
 duration_double_init = .8  # (s)
@@ -275,7 +275,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         dst_l = np.array([*left_foot_unique[i + 1], src_l[2]])
         curve_l = get_foot_curve(src_l, dst_l, dz=0.15)
         com_l = get_com_positions(corresp_com_left[i][0], corresp_com_left[i][-1], 50)
-        orientation_l = get_orientations(left_foot_orientation[i], left_foot_orientation[i+1], 50)
+        orientation_l = get_orientations_array(left_foot_orientation[i], left_foot_orientation[i + 1], 50)
         move_foot(
             configuration,
             tasks,
@@ -295,7 +295,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         dst_r = np.array([*right_foot_unique[i + 1], src_r[2]])
         curve_r = get_foot_curve(src_r, dst_r, dz=0.15)
         com_r = get_com_positions(corresp_com_right[i][0], corresp_com_right[i][-1], 50)
-        orientation_r = get_orientations(right_foot_orientation[i], right_foot_orientation[i+1], 50)
+        orientation_r = get_orientations_array(right_foot_orientation[i], right_foot_orientation[i + 1], 50)
         move_foot(
             configuration,
             tasks,
