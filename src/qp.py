@@ -1,6 +1,5 @@
 from mpc_qp import MpcQp
 from qpsolvers_benchmark.problem import Problem
-from qpsolvers_benchmark.tolerance import Tolerance
 import numpy as np
 import os
 
