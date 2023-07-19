@@ -18,7 +18,12 @@ import pink
 from pink.tasks import FrameTask, PostureTask
 from com_task import ComTask
 from utils import *
-from move_foot import move_foot, get_foot_curve, get_com_positions, get_orientations_array
+from move_foot import (
+    move_foot,
+    get_foot_curve,
+    get_com_positions,
+    get_orientations_array,
+)
 
 try:
     from robot_descriptions.loaders.pinocchio import load_robot_description
@@ -108,8 +113,8 @@ spacing = (
     0.0,
     np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1]),
 )  # lateral spacing between feet
-duration_double_init = .8  # (s)
-duration_step = .8  # (s)
+duration_double_init = 0.8  # (s)
+duration_step = 0.8  # (s)
 steps = int(simulation_time / T_control)
 alpha = 1  # Weight for jerk
 gamma = 1e3  # Weight for zk_ref
@@ -165,7 +170,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         write_hdf5=store,
         debug=debug,
         perturbations=perturbations,
-        name="ForwardWalk"
+        name=trajectory_type.title() + "Walk",
     )
 
     # Initialize state of the robot
@@ -196,7 +201,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     #     cop_y.append(curr_cop[1])
     #     # Run the MPC iteration and update the robot state
     #     controller.MPC_iteration(i, N, T, file=None)
-        
+
     com_x, com_y, cop_x, cop_y = controller.run_MPC()
     # print(len(com_x))
 
@@ -217,7 +222,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     for k in range(len(right_indices) - 1):
         corresp_com_right.append(com[right_indices[k][1] : right_indices[k + 1][0]])
 
-    left_foot_unique = [left_foot[i[0]][:-1]for i in left_indices]
+    left_foot_unique = [left_foot[i[0]][:-1] for i in left_indices]
     right_foot_unique = [right_foot[i[0]][:-1] for i in right_indices]
     left_foot_orientation = [left_foot[i[0]][-1] for i in left_indices]
     right_foot_orientation = [right_foot[i[0]][-1] for i in right_indices]
@@ -230,11 +235,13 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     print("com left ->", corresp_com_left)
     print("com right -> ", corresp_com_right)
 
-    # todo: Start with left
+    # define the tasks
     left_foot_task = FrameTask("l_ankle", position_cost=100.0, orientation_cost=1.0)
 
     pelvis_task = FrameTask(
-        "PELVIS_S", position_cost=[0.0, 0.0, 1.0], orientation_cost=[100.0, 100.0, 0.0] # 3.0 before
+        "PELVIS_S",
+        position_cost=[0.0, 0.0, 1.0],
+        orientation_cost=[100.0, 100.0, 0.0],  # 3.0 before
     )
     right_foot_task = FrameTask("r_ankle", position_cost=100.0, orientation_cost=1.0)
     com_task = ComTask(position_cost=[1.0, 10.0, 1.0])
@@ -249,7 +256,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         right_foot_task,
         com_task,
     ]
-
+    # setting the target of the tasks
     pelvis_task.set_target_from_configuration(configuration)
     com_task.set_target_from_configuration(configuration)
     left_foot_task.set_target(configuration.get_transform_frame_to_world("l_ankle"))
@@ -261,6 +268,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     if "quadprog" in qpsolvers.available_solvers:
         solver = "quadprog"
     viewer = viz.viewer
+    # visualizing the frames of joints and their targets in meshcat
     meshcat_shapes.frame(viewer["r_ankle"], opacity=1.0)
     meshcat_shapes.frame(viewer["r_ankle_target"], opacity=0.5)
     meshcat_shapes.frame(viewer["l_ankle"], opacity=1.0)
@@ -268,22 +276,28 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     meshcat_shapes.frame(viewer["com"], opacity=1.0, axis_length=1.0)
     frequency = 50.0
     rate = RateLimiter(frequency=frequency)
-
+    # the first position of the right foot
     src_r = configuration.get_transform_frame_to_world("r_ankle").copy()
     src_r = src_r.translation
-
+    # the first position of the left foot
     src_l = configuration.get_transform_frame_to_world("l_ankle").copy()
     src_l = src_l.translation
     time = 0.0
-    filepath = get_file_path("ForwardWalk")
-    file = h5.File(filepath, "a")
+    file = None
+    if store:
+        filepath = get_file_path("ForwardWalk")  # where to save the data
+        file = h5.File(filepath, "a")
     i_store = 0
     for i in range(len(right_foot_unique) - 1):
         # left_foot
         dst_l = np.array([*left_foot_unique[i + 1], src_l[2]])
         curve_l = get_foot_curve(src_l, dst_l, dz=0.15)
-        com_l = get_com_positions(corresp_com_left[i][0], corresp_com_left[i][-1], int(frequency))
-        orientation_l = get_orientations_array(left_foot_orientation[i], left_foot_orientation[i + 1], int(frequency))
+        com_l = get_com_positions(
+            corresp_com_left[i][0], corresp_com_left[i][-1], int(frequency)
+        )
+        orientation_l = get_orientations_array(
+            left_foot_orientation[i], left_foot_orientation[i + 1], int(frequency)
+        )
         move_foot(
             configuration,
             tasks,
@@ -297,7 +311,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
             visualizer=viz,
             time=time,
             file=file,
-            store_qp=True,
+            store_qp=store,
             iteration=i_store,
         )
         i_store += int(frequency)
@@ -308,8 +322,12 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
         # right_foot
         dst_r = np.array([*right_foot_unique[i + 1], src_r[2]])
         curve_r = get_foot_curve(src_r, dst_r, dz=0.15)
-        com_r = get_com_positions(corresp_com_right[i][0], corresp_com_right[i][-1], int(frequency))
-        orientation_r = get_orientations_array(right_foot_orientation[i], right_foot_orientation[i + 1], int(frequency))
+        com_r = get_com_positions(
+            corresp_com_right[i][0], corresp_com_right[i][-1], int(frequency)
+        )
+        orientation_r = get_orientations_array(
+            right_foot_orientation[i], right_foot_orientation[i + 1], int(frequency)
+        )
         move_foot(
             configuration,
             tasks,
@@ -323,19 +341,21 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
             visualizer=viz,
             time=time,
             file=file,
-            store_qp=True,
-            iteration=i_store
+            store_qp=store,
+            iteration=i_store,
         )
         i_store += int(frequency)
         src_r = configuration.get_transform_frame_to_world(
             right_foot_task.body
         ).translation
         time += 1.0
-    file.close()
+    if store:
+        file.close()
+
 
 def main():
     trajectory_type = "forward"
-    move(trajectory_type, debug=False, store=True)
+    move(trajectory_type, debug=False, store=False)
 
 
 if __name__ == "__main__":

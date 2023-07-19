@@ -7,19 +7,20 @@ from pink.configuration import Configuration
 from pink.tasks.exceptions import TargetNotSet
 from pink.tasks.task import Task
 
+
 class ComTask(Task):
     cost: np.ndarray
     lm_damping: float
     transform_target_to_world: Optional[pin.SE3]
+
     def __init__(
         self,
         position_cost: Union[float, Sequence[float]],
         lm_damping: float = 1e-6,
     ) -> None:
-        r"""Define a new body task.
+        r"""Define a new com task.
 
         Args:
-            body: Name of the body frame to move to the target pose.
             position_cost: Contribution of position errors to the normalized
                 cost, in :math:`[\mathrm{cost}] / [\mathrm{m}]`. If this is a
                 vector, the cost is anisotropic and each coordinate corresponds
@@ -34,9 +35,7 @@ class ComTask(Task):
         #
         self.set_position_cost(position_cost)
 
-    def set_position_cost(
-        self, position_cost: Union[float, Sequence[float]]
-    ) -> None:
+    def set_position_cost(self, position_cost: Union[float, Sequence[float]]) -> None:
         r"""Set a new cost for all 3D position coordinates.
 
         Args:
@@ -50,16 +49,24 @@ class ComTask(Task):
         else:  # not isinstance(position_cost, float)
             assert all(cost >= 0.0 for cost in position_cost)
         self.cost[0:3] = position_cost
-    def set_target_from_configuration(
-        self, configuration: Configuration
-    ) -> None:
+
+    def set_target_from_configuration(self, configuration: Configuration) -> None:
         """Set task target pose from a robot configuration.
 
         Args:
             configuration: Robot configuration.
         """
-        self.set_target(pin.SE3(np.eye(3), np.array(pin.centerOfMass(configuration.model, configuration.data, configuration.q))))
-    
+        self.set_target(
+            pin.SE3(
+                np.eye(3),
+                np.array(
+                    pin.centerOfMass(
+                        configuration.model, configuration.data, configuration.q
+                    )
+                ),
+            )
+        )
+
     def set_target(
         self,
         transform_target_to_world: np.ndarray,
@@ -83,14 +90,16 @@ class ComTask(Task):
         """
         if self.transform_target_to_world is None:
             raise TargetNotSet("no target position set for COM")
-        current_com_position = pin.centerOfMass(configuration.model,
-                                                configuration.data,
-                                                configuration.q)
-        error =  - current_com_position + self.transform_target_to_world.translation
+        current_com_position = pin.centerOfMass(
+            configuration.model, configuration.data, configuration.q
+        )
+        error = -current_com_position + self.transform_target_to_world.translation
         return error
-    
+
     def compute_jacobian(self, configuration: Configuration) -> np.ndarray:
-        return pin.jacobianCenterOfMass(configuration.model, configuration.data, configuration.q)
+        return pin.jacobianCenterOfMass(
+            configuration.model, configuration.data, configuration.q
+        )
 
     def compute_qp_objective(
         self, configuration: Configuration
