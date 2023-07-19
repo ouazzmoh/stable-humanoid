@@ -242,12 +242,12 @@ class MPC:
             raise ValueError(f"Cannot solve the QP at iteration {i}")
 
         if file and self.write_hdf5:
-            store_qp_in_file(file, self.T_control * i, i, P=Q, q=p, G=G, h=h_cond)
+            store_qp_in_file(file, self.T_control * i, f"mpc_qp_{i:04}", "mpc", P=Q, q=p, G=G, h=h_cond)
             # TODO: Remove the assertions below
-            assert np.all(Q == retrieve_problem_data_from_file(file, i)["P"])
-            assert np.all(p == retrieve_problem_data_from_file(file, i)["q"])
-            assert np.all(G == retrieve_problem_data_from_file(file, i)["G"])
-            assert np.all(h_cond == retrieve_problem_data_from_file(file, i)["h"])
+            # assert np.all(Q == retrieve_problem_data_from_file(file, i)["P"])
+            # assert np.all(p == retrieve_problem_data_from_file(file, i)["q"])
+            # assert np.all(G == retrieve_problem_data_from_file(file, i)["G"])
+            # assert np.all(h_cond == retrieve_problem_data_from_file(file, i)["h"])
 
         if self.debug:
             num_frames = 10  # Number of frames to plot

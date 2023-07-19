@@ -639,7 +639,7 @@ def get_file_path(filename):
         file.attrs["title"] = "sequence of walking MPC qp problems"
     return file_path
 
-def store_qp_in_file(file :h5._hl.files.File, t: float, iter: int, **kwargs):
+def store_qp_in_file(file :h5._hl.files.File, t: float, name: str, type: str, **kwargs):
     """Stores the qp problem matrices in the given file.
 
     Args:
@@ -647,12 +647,13 @@ def store_qp_in_file(file :h5._hl.files.File, t: float, iter: int, **kwargs):
         t (float): time in seconds
         iter (int): will be used to name the qp problem in the file
     """
-    if "walking_MPC" not in file:
-        file.create_group("walking_MPC")
-    group = file["walking_MPC"]
-    if f"qp_{iter:04}" not in group:
-        group.create_group(f"qp_{iter:04}")
-    group = group[f"qp_{iter:04}"]
+    group_name = f"{type}_problems"
+    if group_name not in file:
+        file.create_group(group_name)
+    group = file[group_name]
+    if name not in group:
+        group.create_group(name)
+    group = group[name]
     group.attrs["time"] = t
     for data_name, data in kwargs.items():
         if f"{data_name}" not in group:
@@ -675,7 +676,7 @@ def store_qp_in_file(file :h5._hl.files.File, t: float, iter: int, **kwargs):
                                             compression="gzip")
 
 
-def retrieve_problem_data_from_file(file: h5._hl.files.File, iter: int):
+def retrieve_problem_data_from_file(file: h5._hl.files.File, name: str, type: str) -> dict:
     """retrieves the qp problem from the given file
 
     Args:
@@ -689,12 +690,13 @@ def retrieve_problem_data_from_file(file: h5._hl.files.File, iter: int):
         dict: dictionnary that contains the problem data
     """
     qp_data = {}
-    if "walking_MPC" not in file:
+    group_name = f"{type}_problems"
+    if group_name not in file:
         raise ValueError("Problem not found")
-    group = file["walking_MPC"]
-    if f"qp_{iter:04}" not in group:
+    group = file[group_name]
+    if name not in group:
         raise ValueError("Problem not found")
-    group = group[f"qp_{iter:04}"]
+    group = group[name]
     for data_name in list(group.keys()):
         if f"{data_name}/data" in group:
             qp_data[data_name] = group[f"{data_name}/data"][:]
