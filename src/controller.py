@@ -1,4 +1,8 @@
 from typing import Tuple, List
+
+import numpy as np
+from collections import Counter
+
 from robot import Robot
 from perturbation import Perturbation
 from footstep_planner import FootstepPlanner
@@ -48,12 +52,14 @@ class MPC:
                  g: float = 9.81,
                  debug: bool = False,
                  perturbations: List[Perturbation] = None,
+                 adapt: bool = False,
                  ) -> None:
         self.simulation_time = simulation_time
         self.prediction_time = prediction_time
         self.T_control = T_control
         self.T_pred = T_pred
         self.robot = robot
+
 
 
 
@@ -74,6 +80,8 @@ class MPC:
         self.g = g
         self.debug = debug
         self.perturbations = perturbations
+
+        self.adapt = adapt
 
     def construct_objective(self,
                             T : float,
@@ -272,6 +280,169 @@ class MPC:
         self.robot.set_positional_attributes(next_x, next_y, steps, self.g)
 
 
+
+
+    def construct_objective_adapting(self,
+                                     T: float,
+                                     speed_ref_x_pred: np.ndarray,
+                                     speed_ref_y_pred: np.ndarray,
+                                     prev_x: np.ndarray,
+                                     prev_y: np.ndarray,
+                                     Uk: np.ndarray,
+                                     Uck: np.ndarray,
+                                     curr_foot_position: Tuple) -> Tuple[np.ndarray, np.ndarray]:
+        # Problem matrices
+        N = int(self.prediction_time / self.T_pred)
+        Pvu = p_v_u_matrix(T, N)
+        Pvs = p_v_s_matrix(T, N)
+        Pzu = p_z_u_matrix(T, self.robot.h, self.g, N)
+        Pzs = p_z_s_matrix(T, self.robot.h, self.g, N)
+        Qprime = np.block([[self.beta * Pvu.T @ Pvu + self.alpha * np.eye(N) + self.gamma * Pzu.T @ Pzu,
+                            - self.gamma * Pzu.T @ Uk],
+                           [-self.gamma * Uk.T @ Pzu, self.gamma * Uk.T @ Uk]])
+        Q = np.block([[Qprime, np.zeros(shape=(N + Uk.shape[1], N + Uk.shape[1]))],
+                      [np.zeros(shape=(N + Uk.shape[1], N + Uk.shape[1])), Qprime]])
+        p = np.hstack(
+            (self.beta * Pvu.T @ (Pvs @ prev_x - speed_ref_x_pred) +
+             self.gamma * Pzu.T @ (Pzs @ prev_x - Uck * curr_foot_position[0]),
+             - self.gamma * Uk.T @ (Pzs @ prev_x - Uck * curr_foot_position[0]),
+             self.beta * Pvu.T @ (Pvs @ prev_y - speed_ref_y_pred) +
+             self.gamma * Pzu.T @ (Pzs @ prev_y - Uck * curr_foot_position[1]),
+             -self.gamma * Uk.T @ (Pzs @ prev_y - Uck * curr_foot_position[1])))
+
+        return Q, p
+
+    def construct_constraints_adapting(self,
+                                       T: float,
+                                       theta_ref_pred: np.ndarray,
+                                       prev_x: np.ndarray,
+                                       prev_y: np.ndarray,
+                                       Uk: np.ndarray,
+                                       Uck: np.ndarray,
+                                       curr_foot_position: Tuple) -> Tuple[np.ndarray, np.ndarray]:
+
+        # Construct the constraints
+        N = int(self.prediction_time / self.T_pred)
+        foot_dimensions = self.robot.foot_dimensions
+        Pzu = p_z_u_matrix(T, self.robot.h, self.g, N)
+        Pzs = p_z_s_matrix(T, self.robot.h, self.g, N)
+        D = Dk_matrix(N, theta_ref_pred)
+        b = np.array(
+            [foot_dimensions[0] / 2, foot_dimensions[0] / 2, foot_dimensions[1] / 2, foot_dimensions[1] / 2] * N)
+        G = D @ np.block([[Pzu, - Uk, np.zeros(shape=(N, N)), np.zeros(shape=(N, Uk.shape[1]))],
+                          [np.zeros(shape=(N, N)), np.zeros(shape=(N, Uk.shape[1])), Pzu, - Uk]])
+        h_cond = b + D @ np.hstack((Uck * curr_foot_position[0] - Pzs @ prev_x,
+                                    Uck * curr_foot_position[1] - Pzs @ prev_y))
+
+        return G, h_cond
+
+
+    def MPC_iteration_adapting(self,
+                                  i: int,
+                                  N: int,
+                                  T: float,
+                                  file=None) -> None:
+        """
+        Perform one iteration of the MPC, i.e. solve the QP of stable walking
+        The function doesn't return anything, but it updates the positional arguments of the robot
+        (attribute of controller)
+        Args:
+            i: current iteration of the MPC loop
+            N: Number of sample in the prediction horizon i.e. QP problem size
+            T: The proper step of integration: used for intermediate visualizations
+            file: The file to store the QP problem if needed
+        Raises:
+            ValueError: If the robot com position is not initialized
+            ValueError: If the QP problem is not feasible
+        Returns:
+            None
+
+        """
+        if self.robot.com_position is None:
+            raise ValueError("The robot com position is not initialized")
+
+        # Current state of the robot
+        curr_xk = np.array([self.robot.com_position[0], self.robot.com_velocity[0], self.robot.com_acceleration[0]])
+        curr_yk = np.array([self.robot.com_position[1], self.robot.com_velocity[1], self.robot.com_acceleration[1]])
+        # Get the current prediction horizon
+        zk_ref_pred_x, zk_ref_pred_y, speed_ref_x_pred, speed_ref_y_pred, theta_ref_pred, steps = \
+            self.get_prediction_horizon_data(i)
+
+
+
+        # TODO : Remove this assertion
+        assert(len(zk_ref_pred_x) == len(zk_ref_pred_y) == len(speed_ref_y_pred) == len(speed_ref_x_pred)
+               == len(theta_ref_pred) == N)
+
+        # Constuct the sampling matrix
+        # TODO: Simplify this
+        # Get unique steps
+        points = np.array([zk_ref_pred_x, zk_ref_pred_y]).T
+        # Get unique rows,
+        _, idx = np.unique(points, axis=0, return_index=True)
+        unique_points = points[np.sort(idx)]
+        # Store the unique steps in order
+        steps_x, steps_y = unique_points[:, 0], unique_points[:, 1]
+        # Store the occurence of the steps
+        occ = Counter(list(zip(zk_ref_pred_x, zk_ref_pred_y)))
+        # The U matrix allows us to choose which footstep at which instant
+        U = u_matrix(N, steps_x, steps_y, occ)
+
+        Uck = U[:, 0]
+        Uk = U[:, 1:]
+
+        # Get the foot position
+        assert(self.robot.left_foot_position is not None or self.robot.right_foot_position is not None)
+        if i == 0:
+            # The initial double support , the reference is the initial position
+            curr_foot_position = np.array([self.xk_init[0], self.yk_init[0]])
+        else:
+            curr_foot_position = self.robot.left_foot_position if self.robot.left_foot_position is not None else \
+                self.robot.right_foot_position
+
+        # Construct the objective function
+        Q, p = self.construct_objective_adapting(self.T_pred, speed_ref_x_pred, speed_ref_y_pred,
+                                                 curr_xk, curr_yk, Uk, Uck, curr_foot_position)
+
+        G, h_cond = self.construct_constraints_adapting(self.T_pred, theta_ref_pred, curr_xk, curr_yk,
+                                                        Uk, Uck, curr_foot_position)
+        # Solve the QP
+        solution = solve_qp(P=Q, q=p, G=None, h=None, solver=self.solver)
+
+        if solution is None:
+            raise ValueError(f"Cannot solve the QP at iteration {i}")
+
+        if file and self.write_hdf5:
+            store_qp_in_file(file, self.T_control * i, f"mpc_qp_{i:04}", "mpc", P=Q, q=p, G=G, h=h_cond)
+            # TODO: Remove the assertions below
+            # assert np.all(Q == retrieve_problem_data_from_file(file, i)["P"])
+            # assert np.all(p == retrieve_problem_data_from_file(file, i)["q"])
+            # assert np.all(G == retrieve_problem_data_from_file(file, i)["G"])
+            # assert np.all(h_cond == retrieve_problem_data_from_file(file, i)["h"])
+
+        if self.debug:
+            num_frames = 10  # Number of frames to plot
+            if i % (int(self.simulation_time / self.T_control) // num_frames) == 0:
+                visuals.plot_intermediate_states(i, curr_xk, curr_yk, self.prediction_time, self.T_pred, T, solution,
+                                                 self.robot.h, self.g, N, zk_ref_pred_x,
+                                                 zk_ref_pred_y, theta_ref_pred, self.robot.foot_dimensions)
+            T -= self.T_control
+            if T <= 0:
+                T = self.T_pred
+        # Compute the next state
+        # We integrate using the control time step
+        next_x, next_y = next_com(jerk=solution[0], previous=curr_xk, t_step=self.T_control), \
+                         next_com(jerk=solution[N + Uk.shape[1]], previous=curr_yk, t_step=self.T_control)
+        # Add the perturbations is they exist
+        if self.perturbations:
+            for perturb in self.perturbations:
+                if abs(perturb.time - i * self.T_control) <= self.T_control:
+                    next_x[2] += perturb.value_x
+                    next_y[2] += perturb.value_y
+        # Update the status of the position
+        self.robot.set_positional_attributes(next_x, next_y, steps, self.g)
+
+
     def run_MPC(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Run the full iterations of the MPC
@@ -306,7 +477,11 @@ class MPC:
 
         for i in range(int(self.simulation_time / self.T_control)):
             # Solve one iteration of the MPC and update the state of the robot
-            self.MPC_iteration(i, N, T, file)
+
+            if self.adapt:
+                self.MPC_iteration_adapting(i, N, T, file)
+            else:
+                self.MPC_iteration(i, N, T, file)
 
             # Store the results
             com_x.append(self.robot.com_position[0])
@@ -322,5 +497,3 @@ class MPC:
         if self.write_hdf5 : file.close()
 
         return np.array(cop_x), np.array(com_x), np.array(cop_y), np.array(com_y)
-
-

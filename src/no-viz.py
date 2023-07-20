@@ -20,8 +20,8 @@ spacing = (0.1, 0.4)  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 0.8  # (s)
 steps = int(simulation_time / T_control)
-alpha = 1  # Weight for jerk
-gamma = 1e3  # Weight for zk_ref
+alpha = 1e-12  # Weight for jerk
+gamma = 1  # Weight for zk_ref
 beta = 1   # Weight for velocity
 average_speed = (0.3, 0)
 stop_at = (8, 10)  # (s)
@@ -29,7 +29,7 @@ stop_at = (8, 10)  # (s)
 robot = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1])
 
 
-def move(trajectory_type, debug=False, store=False, perturbations=None):
+def move(trajectory_type, debug=False, store=False, perturbations=None, adapt=False):
     # Problem variables
     xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
@@ -40,12 +40,12 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
     zk_min_x, zk_max_x, zk_min_y, zk_max_y, theta_ref = step_planner.footsteps_to_array(0, simulation_time, T_control)
 
-    plt.plot(zk_min_x, label="zk_min_x")
-    plt.plot(zk_max_x, label="zk_max_x")
-    plt.show()
-    plt.plot(zk_min_y, label="zk_min_y")
-    plt.plot(zk_max_y, label="zk_max_y")
-    plt.show()
+    # plt.plot(zk_min_x, label="zk_min_x")
+    # plt.plot(zk_max_x, label="zk_max_x")
+    # plt.show()
+    # plt.plot(zk_min_y, label="zk_min_y")
+    # plt.plot(zk_max_y, label="zk_max_y")
+    # plt.show()
 
 
     # speed_ref_x, speed_ref_y = step_planner.speed_to_array(0, simulation_time, T_control)
@@ -61,32 +61,33 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     plt.show()
     # Running the MPC
     controller = MPC(simulation_time, prediction_time, T_control, T_pred, robot, step_planner,
-                     alpha, beta, gamma, xk_init, yk_init, write_hdf5=store, debug=debug, perturbations=perturbations)
+                     alpha, beta, gamma, xk_init, yk_init, write_hdf5=store, debug=debug, perturbations=perturbations,
+                     adapt=adapt)
     cop_x, com_x, cop_y, com_y = controller.run_MPC()
 
 
     # Plot the results
-    plt.plot(t, cop_x, label="cop")
-    plt.plot(t, com_x, label="com")
+    plt.plot(t, cop_x, label="cop_x")
+    plt.plot(t, com_x, label="com_x")
     plt.plot(t, zk_min_x, linewidth=0.7)
     plt.plot(t, zk_max_x, linewidth=0.7)
     plt.title("x movement")
     plt.xlabel("time (s)")
-    plt.ylabel("x (m)")
+    plt.ylabel("y (m)")
     # plt.ylim(0,2)
     plt.legend()
-    plt.show()
+    # plt.show()
 
     plt.plot(t, cop_y, label="cop")
     plt.plot(t, com_y, label="com")
     plt.plot(t, zk_min_y, linewidth=0.7)
     plt.plot(t, zk_max_y, linewidth=0.7)
     # plt.ylim((-0.8, 0.8))
-    plt.title("y movement")
+    plt.title("x,y movement")
     plt.xlabel("time (s)")
-    plt.ylabel("x (m)")
+    plt.ylabel("x,y (m)")
     plt.legend()
-    plt.show()
+    # plt.show()
 
     fig, ax = plt.subplots()
     ax.plot(cop_x, cop_y, label="cop", color="green")
@@ -104,9 +105,9 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
 def main():
     # trajectory_type = input("Enter trajectory type: ")
-    trajectory_type = "u"
+    trajectory_type = "forward"
     perturbations = [Perturbation(0, 0.6, 6)]
-    move(trajectory_type, debug=False)
+    move(trajectory_type, debug=True, adapt=True)
 
 
 if __name__ == "__main__":

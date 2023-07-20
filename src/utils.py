@@ -816,3 +816,18 @@ def group_not_none(lst):
     if start is not None:
         groups.append((start, len(lst) - 1))
     return groups
+
+
+def u_matrix(N, steps_x, steps_y, occ_dict):
+    assert(len(steps_y) == len(steps_x))
+    U = np.zeros(shape=(N, len(steps_x)))
+    # Current position in the U matrix
+    position = 0
+    for i in range(len(steps_x)):
+        # Fill rows according to the occurrence of each step
+        occ = occ_dict[(steps_x[i], steps_y[i])]
+        for k in range(occ):
+            U[position + k, i] = 1
+        # Update position
+        position += occ
+    return U
