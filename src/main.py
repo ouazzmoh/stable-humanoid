@@ -354,7 +354,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
 
 def main():
-    trajectory_type = "forward"
+    trajectory_type = "upwards_turning"
     move(trajectory_type, debug=False, store=False)
 
 

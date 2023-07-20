@@ -64,28 +64,6 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
                      alpha, beta, gamma, xk_init, yk_init, write_hdf5=store, debug=debug, perturbations=perturbations)
     cop_x, com_x, cop_y, com_y = controller.run_MPC()
 
-    print("com", robot.offline_com_trajectory)
-    print("left", robot.offline_left_foot_trajectory)
-    print("right", robot.offline_right_foot_trajectory)
-
-    left = robot.offline_left_foot_trajectory
-
-    corresp_left_com = []
-    ind1, ind2 = 0, 0
-    for i in range(left):
-        if left[i+1] is None:
-            ind2 = i
-
-    # TODO: Continue this preparation of transitional com
-
-
-
-
-    com = robot.offline_left_foot_trajectory
-    plt.plot([c[0] for c in com], [c[1] for c in com])
-    plt.title("Sheeesh")
-    plt.show()
-
 
     # Plot the results
     plt.plot(t, cop_x, label="cop")
@@ -126,7 +104,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
 def main():
     # trajectory_type = input("Enter trajectory type: ")
-    trajectory_type = "forward"
+    trajectory_type = "u"
     perturbations = [Perturbation(0, 0.6, 6)]
     move(trajectory_type, debug=False)
 
