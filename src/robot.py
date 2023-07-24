@@ -38,6 +38,9 @@ class Robot:
         self.offline_left_foot_trajectory = []
         self.offline_right_foot_trajectory = []
 
+        ## Keep this for now
+        self.curr_foot_position = None
+
     def initialize_position(self,
                             xk,
                             yk,
@@ -57,6 +60,8 @@ class Robot:
         self.com_acceleration = np.array([xk[2], yk[2]])
         self.cop_position = (np.array([1, 0, -self.h / g]) @ xk, np.array([1, 0, -self.h / g]) @ yk)
         self.left_foot_position = np.array([xk[0], yk[0] + self.spacing_y/2 + self.foot_dimensions[1]/2])
+        self.right_foot_position = np.array([xk[0], yk[0] - self.spacing_y / 2 - self.foot_dimensions[1] / 2])
+        self.curr_foot_position = np.array([xk[0], yk[0]])
 
     def set_foot_positions_closed_loop(self,
                                        steps: List[Tuple[float, float, str, float]])-> None:

@@ -11,6 +11,20 @@ import visuals
 
 
 
+#TODO: Debugging Note for foot adaptation:
+"""
+    The solution of the QP seems to be not correct, as the decided footsteps are not significant.
+    I am assuming that most likely the problem comes from the choice of the current footsteps position 
+    in the objective function and constraints.
+    * Check if there is any dimensions problem in the constraints function, objective is checked.
+    * Plot in a more significant way the decided footsteps
+    * Is my way of the choosing the current footstep correct ? Is the way I separate between the current 
+    and the future footsteps correct ?
+    * Recheck my understanding of the solution, as I don't see clearly as it is claimed in the research paper, 
+    how will the QP decide the footsteps, without really knowing the reference just by the fact that the QP is 
+    minimizing the velocity. Or at least, it seems foggy to me.
+"""
+
 class MPC:
     """
     This class represents the MPC controller, which is used to generate stable walking for the robot.
@@ -391,14 +405,22 @@ class MPC:
         Uck = U[:, 0]
         Uk = U[:, 1:]
 
+
+
         # Get the foot position
         assert(self.robot.left_foot_position is not None or self.robot.right_foot_position is not None)
-        if i == 0:
-            # The initial double support , the reference is the initial position
-            curr_foot_position = np.array([self.xk_init[0], self.yk_init[0]])
-        else:
-            curr_foot_position = self.robot.left_foot_position if self.robot.left_foot_position is not None else \
-                self.robot.right_foot_position
+
+        curr_foot_position = self.robot.curr_foot_position
+
+        zk_ref_pred_x_2 = Uck * curr_foot_position[0] + Uk @ steps_x[1:]
+        zk_ref_pred_y_2 = Uck * curr_foot_position[1] + Uk @ steps_y[1:]
+
+        # assert(np.array_equal(zk_ref_pred_x_2, zk_ref_pred_x) and np.array_equal(zk_ref_pred_y_2, zk_ref_pred_y))
+
+        if not ( np.max(abs(zk_ref_pred_x_2 - zk_ref_pred_x)) < 1e-1  and
+                 np.max(abs(zk_ref_pred_y_2 - zk_ref_pred_y)) < 1e-1):
+            print(f"Problem here ! i = {i}")
+
 
         # Construct the objective function
         Q, p = self.construct_objective_adapting(self.T_pred, speed_ref_x_pred, speed_ref_y_pred,
@@ -440,7 +462,12 @@ class MPC:
                     next_x[2] += perturb.value_x
                     next_y[2] += perturb.value_y
         # Update the status of the position
+        #TODO: Check if the future step positions are correct and apply them to the robot
+        #TODO: Question : when passing from i=0 to i=1, the decided foot position will be different but close to 0
+        #TODO: What i understand right now is the it shouldn't visually change in this case
         self.robot.set_positional_attributes(next_x, next_y, steps, self.g)
+        self.robot.curr_foot_position = np.array([zk_ref_pred_x[1], zk_ref_pred_y[1]])
+
 
 
     def run_MPC(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
