@@ -107,12 +107,16 @@ h = (
 )  # (m)
 foot_dimensions = [
     0.225,
-    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1]),
-]  # length(x), width(y)
+    # np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1]),
+    0.1,
+]
+# length(x), width(y)
 spacing = (
     0.0,
-    np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1]),
-)  # lateral spacing between feet
+    # np.abs(configuration.get_transform_frame_to_world("r_ankle").copy().translation[1] + .3),
+    0.1,
+)
+# lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 0.8  # (s)
 steps = int(simulation_time / T_control)
@@ -357,7 +361,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
 
 def main():
     trajectory_type = "upwards_turning"
-    move(trajectory_type, debug=False, store=True, filename=f"{trajectory_type}Walk")
+    move(trajectory_type, debug=False)
 
 
 if __name__ == "__main__":

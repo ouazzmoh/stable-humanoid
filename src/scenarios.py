@@ -210,14 +210,14 @@ def construct_zmin_zmax_forward_backwards(total_duration, duration_double_init, 
                                   total_duration,
                                   z_min=(number_of_steps - step_i - 1) * (foot_size + spacing/2),
                                   z_max=(number_of_steps - step_i) * (foot_size + spacing/2),
-                                  which_foot='right' if step_i % 2 == 0 else 'left',
+                                  which_foot='left' if step_i % 2 == 0 else 'right',
                                   shift=0))
         else:
             footsteps.append(Step(step_i * duration_step + duration_double_init,
                                   (step_i + 1) * duration_step + duration_double_init,
                                   z_min=(number_of_steps - step_i - 1)*(foot_size + spacing/2),
                                   z_max=(number_of_steps - step_i)*(foot_size + spacing/2),
-                                  which_foot='right' if step_i % 2 == 0 else 'left',
+                                  which_foot='left' if step_i % 2 == 0 else 'right',
                                   shift=0))
     return footsteps
 

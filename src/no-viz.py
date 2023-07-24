@@ -104,7 +104,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
 def main():
     # trajectory_type = input("Enter trajectory type: ")
-    trajectory_type = "upwards"
+    trajectory_type = "upwards_turning"
     perturbations = [Perturbation(0, 0.6, 6)]
     move(trajectory_type, debug=False)
 
