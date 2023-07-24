@@ -97,7 +97,7 @@ robot.q0 = q_ref
 configuration = pink.Configuration(robot.model, robot.data, robot.q0)
 viz.display(configuration.q)
 T_pred = 100e-3  # (s)
-T_control = 100e-3  # (s)
+T_control = 5e-3  # (s)
 simulation_time = 10  # (s)
 prediction_time = 2  # (s)
 g = 9.81
@@ -125,7 +125,7 @@ stop_at = (8, 10)  # (s)
 robot_mpc = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1])
 
 
-def move(trajectory_type, debug=False, store=False, perturbations=None):
+def move(trajectory_type, debug=False, store=False, perturbations=None, filename=None):
     # Problem variables
     xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
@@ -285,7 +285,9 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     time = 0.0
     file = None
     if store:
-        filepath = get_file_path("ForwardWalk")  # where to save the data
+        if filename is None:
+            raise ValueError("Please provide a filename to store the data")
+        filepath = get_file_path(filename)  # where to save the data
         file = h5.File(filepath, "a")
     i_store = 0
     for i in range(len(right_foot_unique) - 1):
@@ -355,7 +357,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
 def main():
     trajectory_type = "upwards_turning"
-    move(trajectory_type, debug=False, store=False)
+    move(trajectory_type, debug=False, store=True, filename=f"{trajectory_type}Walk")
 
 
 if __name__ == "__main__":
