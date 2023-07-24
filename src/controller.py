@@ -258,7 +258,8 @@ class MPC:
         G, h_cond = self.construct_constraints(self.T_pred, theta_ref_pred, zk_ref_pred_x, zk_ref_pred_y,
                                                curr_xk, curr_yk)
         # Solve the QP
-        solution = solve_qp(P=Q, q=p, G=G, h=h_cond, solver=self.solver)
+        #TODO: Switch back To add the conditions
+        solution = solve_qp(P=Q, q=p, G=None, h= None, solver=self.solver)
 
         if solution is None:
             raise ValueError(f"Cannot solve the QP at iteration {i}")
@@ -415,11 +416,11 @@ class MPC:
         zk_ref_pred_x_2 = Uck * curr_foot_position[0] + Uk @ steps_x[1:]
         zk_ref_pred_y_2 = Uck * curr_foot_position[1] + Uk @ steps_y[1:]
 
-        # assert(np.array_equal(zk_ref_pred_x_2, zk_ref_pred_x) and np.array_equal(zk_ref_pred_y_2, zk_ref_pred_y))
+        assert(np.array_equal(zk_ref_pred_x_2, zk_ref_pred_x) and np.array_equal(zk_ref_pred_y_2, zk_ref_pred_y))
 
-        if not ( np.max(abs(zk_ref_pred_x_2 - zk_ref_pred_x)) < 1e-1  and
-                 np.max(abs(zk_ref_pred_y_2 - zk_ref_pred_y)) < 1e-1):
-            print(f"Problem here ! i = {i}")
+        # if not ( np.max(abs(zk_ref_pred_x_2 - zk_ref_pred_x)) < 1e-5  and
+        #          np.max(abs(zk_ref_pred_y_2 - zk_ref_pred_y)) < 1e-5):
+        #     print(f"Problem here ! i = {i}")
 
 
         # Construct the objective function
@@ -429,7 +430,7 @@ class MPC:
         G, h_cond = self.construct_constraints_adapting(self.T_pred, theta_ref_pred, curr_xk, curr_yk,
                                                         Uk, Uck, curr_foot_position)
         # Solve the QP
-        solution = solve_qp(P=Q, q=p, G=None, h=None, solver=self.solver)
+        solution = solve_qp(P=Q, q=p, G=G, h=h_cond, solver=self.solver)
 
         if solution is None:
             raise ValueError(f"Cannot solve the QP at iteration {i}")
@@ -441,6 +442,11 @@ class MPC:
             # assert np.all(p == retrieve_problem_data_from_file(file, i)["q"])
             # assert np.all(G == retrieve_problem_data_from_file(file, i)["G"])
             # assert np.all(h_cond == retrieve_problem_data_from_file(file, i)["h"])
+
+        next_foot_steps = list(zip(solution[N:N+Uk.shape[1]],
+                                               solution[2*N + Uk.shape[1]:]))
+
+        print(next_foot_steps, "next foot steps----->",  i)
 
         if self.debug:
             num_frames = 10  # Number of frames to plot
@@ -467,6 +473,7 @@ class MPC:
         #TODO: What i understand right now is the it shouldn't visually change in this case
         self.robot.set_positional_attributes(next_x, next_y, steps, self.g)
         self.robot.curr_foot_position = np.array([zk_ref_pred_x[1], zk_ref_pred_y[1]])
+
 
 
 
