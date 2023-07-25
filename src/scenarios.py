@@ -314,4 +314,93 @@ def construct_zmin_zmax_interactive(x_axis: Tuple,
 
 
 
+def construct_zmin_zmax_circle(total_duration, duration_double_init, duration_step,
+                            width, length, spacing_x, spacing_y, radius) -> Tuple[List[Step], List[Step]]:
+    number_of_steps = round((total_duration - duration_double_init) / duration_step)
+    footsteps_cos : List[Step] = []
+    footsteps_sin : List[Step] = []
+    d = width/2 + spacing_x/2
+    # d = .3
 
+    # Initial Double support
+    footsteps_cos.append(Step(0,
+                          duration_double_init,
+                          z_min=radius - d,
+                          z_max=radius + d,
+                          which_foot="double_support",
+                          orientation=np.pi/2,
+                          shift=0))
+    footsteps_sin.append(Step(0,
+                              duration_double_init,
+                              z_min= 0,
+                              z_max= 0,
+                              which_foot="double_support",
+                              orientation=np.pi / 2,
+                              shift=0))
+    # First step
+    footsteps_cos.append(Step(duration_step + duration_double_init,
+                          2 * duration_step + duration_double_init,
+                          z_min=radius + d - width/2,
+                          z_max=radius + d + width/2,
+                          which_foot="right",
+                          orientation=np.pi / 2,
+                          shift=0))
+    footsteps_sin.append(Step(0,
+                              duration_double_init,
+                              z_min=0,
+                              z_max=0,
+                              which_foot="double_support",
+                              orientation=np.pi / 2,
+                              shift=0))
+    thetas = np.linspace(0, 2 * np.pi, number_of_steps)
+
+    for i in range(2, number_of_steps):
+        theta = thetas[i]
+        center_around_cos = radius * np.cos(theta) # If the robot had double support this would be the center
+        center_around_sin = radius * np.sin(theta) # If the robot had double support this would be the center
+        # references for right and left foot
+
+        # if i is even, right foot is on the ground
+        ref_x = center_around_cos + d * np.cos(theta)*(-1)**(i+1)
+        ref_y = center_around_sin + d * np.sin(theta)*(-1)**(i+1)
+
+        if i == number_of_steps -1:
+            footsteps_cos.append(Step(i * duration_step + duration_double_init,
+                                  total_duration,
+                                  z_min= ref_x - (width/2) * np.cos(theta),
+                                  z_max= ref_x + (width/2) * np.cos(theta),
+                                  #     z_min=ref_x - .3,
+                                  #     z_max=ref_x + .3,
+                                  which_foot="left" if i % 2 == 0 else "right",
+                                  orientation=np.pi / 2 + theta,
+                                  shift=0))
+            footsteps_sin.append(Step(i * duration_step + duration_double_init,
+                                      total_duration,
+                                      z_min=ref_y - (length / 2) * np.sin(theta),
+                                      z_max=ref_y + (length / 2) * np.sin(theta),
+                                      # z_min=ref_y - .3,
+                                      # z_max=ref_y + .3,
+                                      which_foot="left" if i % 2 == 0 else "right",
+                                      orientation=np.pi / 2 + theta,
+                                      shift=0))
+        else:
+            footsteps_cos.append(Step(i * duration_step + duration_double_init,
+                                  (i + 1) * duration_step + duration_double_init,
+                                      z_min= ref_x - (width/2) * np.cos(theta),
+                                      z_max= ref_x + (width/2) * np.cos(theta),
+                                      # z_min=ref_x - .3,
+                                      # z_max=ref_x + .3,
+                                  which_foot="left" if i % 2 == 0 else "right",
+                                  orientation=np.pi / 2 + theta,
+                                  shift=0))
+            footsteps_sin.append(Step(i * duration_step + duration_double_init,
+                                      (i + 1) * duration_step + duration_double_init,
+                                      z_min=ref_y - (length / 2) * np.sin(theta),
+                                      z_max=ref_y + (length / 2) * np.sin(theta),
+                                      # z_min=ref_y - .3,
+                                      # z_max=ref_y + .3,
+                                      which_foot="left" if i % 2 == 0 else "right",
+                                      orientation=np.pi / 2 + theta,
+                                      shift=0))
+
+    return footsteps_cos, footsteps_sin

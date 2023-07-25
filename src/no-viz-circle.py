@@ -11,27 +11,27 @@ from controller import MPC
 
 T_pred = 100e-3  # (s)
 T_control = 100e-3  # (s)
-simulation_time = 10  # (s)
-prediction_time = 2  # (s)
+simulation_time = 30  # (s)
+prediction_time = 5 # (s)
 g = 9.81
 h = 0.8
 foot_dimensions = [0.3, 0.25]  # length(x), width(y)
-spacing = (0.1, 0.4)  # lateral spacing between feet
+spacing = (0.4, 0.1)  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 0.8  # (s)
 steps = int(simulation_time / T_control)
-alpha = 1  # Weight for jerk
-gamma = 1e3  # Weight for zk_ref
-beta = 1   # Weight for velocity
-average_speed = (0.3, 0)
-stop_at = (8, 10)  # (s)
+alpha = 1 # Weight for jerk
+gamma = 1  # Weight for zk_ref
+beta = 1  # Weight for velocity
+average_speed = (0.25, 0.25)
+stop_at = (30, 30)  # (s)
 
 robot = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1])
 
 
 def move(trajectory_type, debug=False, store=False, perturbations=None):
     # Problem variables
-    xk_init = (0, 0, 0)
+    xk_init = (2, 0, 0)
     yk_init = (0, 0, 0)
     # Footstep planning
     step_planner = FootstepPlanner(robot, simulation_time, duration_double_init,
@@ -39,6 +39,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
                                    stop_at=stop_at)
 
     zk_min_x, zk_max_x, zk_min_y, zk_max_y, theta_ref = step_planner.footsteps_to_array(0, simulation_time, T_control)
+
 
     plt.plot(zk_min_x, label="zk_min_x")
     plt.plot(zk_max_x, label="zk_max_x")
@@ -64,6 +65,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
                      alpha, beta, gamma, xk_init, yk_init, write_hdf5=store, debug=debug, perturbations=perturbations)
     cop_x, com_x, cop_y, com_y = controller.run_MPC()
 
+    # TODO : The visualization for x and y is shifted by one step, but it is correct
 
     # Plot the results
     plt.plot(t, cop_x, label="cop")
@@ -104,7 +106,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
 def main():
     # trajectory_type = input("Enter trajectory type: ")
-    trajectory_type = "upwards_turning"
+    trajectory_type = "circle"
     perturbations = [Perturbation(0, 0.6, 6)]
     move(trajectory_type, debug=False)
 

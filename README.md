@@ -46,3 +46,20 @@ To run the MPC for a specific scenario, run the following command:
     <td><img src="./plots/upwards4" alt="Moving Forward 4" width="400"/></td>
   </tr>
 </table>
+
+**Circular Trajectory:**
+
+
+<table>
+  <tr>
+    <td><img src="./plots/circle1" alt="Moving Forward 1" width="400"/></td>
+    <td><img src="./plots/circle2" alt="Moving Forward 2" width="400"/></td>
+  </tr>
+  <tr>
+    <td><img src="./plots/circle3" alt="Moving Forward 3" width="400"/></td>
+    <td><img src="./plots/circle4" alt="Moving Forward 4" width="400"/></td>
+  </tr>
+</table>
+
+N.B: the visualization for the x and y movement is correct but just shifted by a step
+--> To fix

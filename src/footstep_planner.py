@@ -81,6 +81,16 @@ class FootstepPlanner:
                                                                                  self.robot.foot_dimensions,
                                                                                  (self.robot.spacing_x,
                                                                                   self.robot.spacing_y))
+        elif self.trajectory_type == "circle":
+            radius = 2
+            footsteps_x, footsteps_y = scenarios.construct_zmin_zmax_circle(self.simulation_time,
+                                                                            self.duration_double_init,
+                                                                            self.duration_step,
+                                                                            width=self.robot.foot_dimensions[1],
+                                                                            length=self.robot.foot_dimensions[0],
+                                                                            spacing_x=self.robot.spacing_x,
+                                                                            spacing_y=self.robot.spacing_y,
+                                                                            radius=radius)
         else:
             raise ValueError("Invalid trajectory type: the available scenarios are 'forward', 'upwards', "
                              "'upwards_turning'")
@@ -240,7 +250,10 @@ class FootstepPlanner:
                 start_step_percentage = (end - from_time) / (end - start)
             if start <= to_time <= end:
                 end_index = i
-                end_step_percentage = (to_time - start) / (end - start)
+                if end == start:
+                    end_step_percentage = 0
+                else:
+                    end_step_percentage = (to_time - start) / (end - start)
 
         if start_index is None:
             return np.array([speed[-1][2]]*round((to_time-from_time)/T))
