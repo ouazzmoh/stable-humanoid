@@ -340,8 +340,8 @@ def construct_zmin_zmax_circle(total_duration, duration_double_init, duration_st
     # First step
     footsteps_cos.append(Step(duration_step + duration_double_init,
                           2 * duration_step + duration_double_init,
-                          z_min=radius + d - width/2,
-                          z_max=radius + d + width/2,
+                          z_min=radius + (d - width/2),
+                          z_max=radius + (d + width/2),
                           which_foot="right",
                           orientation=np.pi / 2,
                           shift=0))
@@ -352,7 +352,7 @@ def construct_zmin_zmax_circle(total_duration, duration_double_init, duration_st
                               which_foot="double_support",
                               orientation=np.pi / 2,
                               shift=0))
-    thetas = np.linspace(0, 2 * np.pi, number_of_steps)
+    thetas = np.linspace(0, np.pi/2, number_of_steps)
 
     for i in range(2, number_of_steps):
         theta = thetas[i]

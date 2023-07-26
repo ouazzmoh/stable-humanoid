@@ -142,7 +142,8 @@ def plot_intermediate_states(i, prev_x, prev_y, prediction_time, T_pred, T, jerk
     plot_foot_steps_single(ax, zk_ref_pred_x, zk_ref_pred_y,
                                    theta_ref_pred, foot_dimensions, spacing=0.4)
     plt.title("QP" + str(i + 1))
-    # plt.ylim((-0.6, 0.6))
+    plt.ylim((-2.5, 2.5))
+    plt.xlim((-2.5, 2.5))
     plt.legend()
     plt.show()
 

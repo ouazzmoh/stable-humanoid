@@ -11,8 +11,8 @@ from controller import MPC
 
 T_pred = 100e-3  # (s)
 T_control = 100e-3  # (s)
-simulation_time = 30  # (s)
-prediction_time = 5 # (s)
+simulation_time = 10  # (s)
+prediction_time = 2 # (s)
 g = 9.81
 h = 0.8
 foot_dimensions = [0.3, 0.25]  # length(x), width(y)
@@ -41,54 +41,64 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     zk_min_x, zk_max_x, zk_min_y, zk_max_y, theta_ref = step_planner.footsteps_to_array(0, simulation_time, T_control)
 
 
-    plt.plot(zk_min_x, label="zk_min_x")
-    plt.plot(zk_max_x, label="zk_max_x")
-    plt.show()
-    plt.plot(zk_min_y, label="zk_min_y")
-    plt.plot(zk_max_y, label="zk_max_y")
-    plt.show()
+    # plt.plot(zk_min_x, label="zk_min_x")
+    # plt.plot(zk_max_x, label="zk_max_x")
+    # plt.show()
+    # plt.plot(zk_min_y, label="zk_min_y")
+    # plt.plot(zk_max_y, label="zk_max_y")
+    # plt.show()
 
 
     # speed_ref_x, speed_ref_y = step_planner.speed_to_array(0, simulation_time, T_control)
     t = np.arange(0, simulation_time, T_control)
     zk_ref_x = (zk_min_x + zk_max_x)/2
     zk_ref_y = (zk_min_y + zk_max_y)/2
-    plt.plot(t, zk_ref_x, label="zk_ref_x")
-    plt.plot(t, zk_ref_y, label="zk_ref_y")
-    plt.xlabel("time (s)")
-    plt.ylabel("cop_reference (m)")
-    plt.title("footstep references in time")
-    plt.legend()
+    # plt.plot(t, zk_ref_x, label="zk_ref_x")
+    # plt.plot(t, zk_ref_y, label="zk_ref_y")
+    # plt.xlabel("time (s)")
+    # plt.ylabel("cop_reference (m)")
+    # plt.title("footstep references in time")
+    # plt.legend()
+    # plt.show()
+
+    plt.scatter(zk_ref_x, zk_ref_y)
     plt.show()
+
+
     # Running the MPC
     controller = MPC(simulation_time, prediction_time, T_control, T_pred, robot, step_planner,
                      alpha, beta, gamma, xk_init, yk_init, write_hdf5=store, debug=debug, perturbations=perturbations)
     cop_x, com_x, cop_y, com_y = controller.run_MPC()
 
+
+
     # TODO : The visualization for x and y is shifted by one step, but it is correct
 
-    # Plot the results
-    plt.plot(t, cop_x, label="cop")
-    plt.plot(t, com_x, label="com")
-    plt.plot(t, zk_min_x, linewidth=0.7)
-    plt.plot(t, zk_max_x, linewidth=0.7)
-    plt.title("x movement")
-    plt.xlabel("time (s)")
-    plt.ylabel("x (m)")
-    # plt.ylim(0,2)
-    plt.legend()
-    plt.show()
+    # # Plot the results
+    # plt.plot(t, cop_x, label="cop")
+    # plt.plot(t, com_x, label="com")
+    # plt.plot(t, zk_min_x, linewidth=0.7)
+    # plt.plot(t, zk_max_x, linewidth=0.7)
+    # plt.title("x movement")
+    # plt.xlabel("time (s)")
+    # plt.ylabel("x (m)")
+    # # plt.ylim(0,2)
+    # plt.legend()
+    # plt.show()
 
-    plt.plot(t, cop_y, label="cop")
-    plt.plot(t, com_y, label="com")
-    plt.plot(t, zk_min_y, linewidth=0.7)
-    plt.plot(t, zk_max_y, linewidth=0.7)
-    # plt.ylim((-0.8, 0.8))
-    plt.title("y movement")
-    plt.xlabel("time (s)")
-    plt.ylabel("x (m)")
-    plt.legend()
-    plt.show()
+    # plt.plot(t, cop_y, label="cop")
+    # plt.plot(t, com_y, label="com")
+    # plt.plot(t, zk_min_y, linewidth=0.7)
+    # plt.plot(t, zk_max_y, linewidth=0.7)
+    # # plt.ylim((-0.8, 0.8))
+    # plt.title("y movement")
+    # plt.xlabel("time (s)")
+    # plt.ylabel("x (m)")
+    # plt.legend()
+    # plt.show()
+
+
+
 
     fig, ax = plt.subplots()
     ax.plot(cop_x, cop_y, label="cop", color="green")
@@ -108,7 +118,7 @@ def main():
     # trajectory_type = input("Enter trajectory type: ")
     trajectory_type = "circle"
     perturbations = [Perturbation(0, 0.6, 6)]
-    move(trajectory_type, debug=False)
+    move(trajectory_type, debug=True)
 
 
 if __name__ == "__main__":
