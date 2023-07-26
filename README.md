@@ -47,6 +47,19 @@ To run the MPC for a specific scenario, run the following command:
   </tr>
 </table>
 
+**Moving Upwards and Turning:**
+
+<table>
+  <tr>
+    <td><img src="./plots/upwards_turning1.png" alt="Moving Forward 1" width="400"/></td>
+    <td><img src="./plots/upwards_turning2.png" alt="Moving Forward 2" width="400"/></td>
+  </tr>
+  <tr>
+    <td><img src="./plots/upwards_turning3.png" alt="Moving Forward 3" width="400"/></td>
+    <td><img src="./plots/upwards_turning4.png" alt="Moving Forward 4" width="400"/></td>
+  </tr>
+</table>
+
 **Circular Trajectory:**
 
 
