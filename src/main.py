@@ -97,7 +97,7 @@ robot.q0 = q_ref
 configuration = pink.Configuration(robot.model, robot.data, robot.q0)
 viz.display(configuration.q)
 T_pred = 100e-3  # (s)
-T_control = 5e-3  # (s)
+T_control = 100e-3  # (s)
 simulation_time = 10  # (s)
 prediction_time = 2  # (s)
 g = 9.81
@@ -360,7 +360,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
 
 
 def main():
-    trajectory_type = "upwards"
+    trajectory_type = "upwards_turning"
     move(trajectory_type, debug=False)
 
 

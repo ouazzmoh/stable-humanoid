@@ -49,7 +49,7 @@ To run the MPC for a specific scenario, run the following command:
 
 **Moving Upwards and Turning:**
 
-<table>
+<table>g
   <tr>
     <td><img src="./plots/upwards_turning1.png" alt="Moving Forward 1" width="400"/></td>
     <td><img src="./plots/upwards_turning2.png" alt="Moving Forward 2" width="400"/></td>
