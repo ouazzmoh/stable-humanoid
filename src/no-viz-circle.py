@@ -11,11 +11,11 @@ from controller import MPC
 
 T_pred = 100e-3  # (s)
 T_control = 100e-3  # (s)
-simulation_time = 10  # (s)
-prediction_time = 2 # (s)
+simulation_time = 30  # (s)
+prediction_time = 5 # (s)
 g = 9.81
 h = 0.8
-foot_dimensions = [0.3, 0.25]  # length(x), width(y)
+foot_dimensions = [0.3, 0.1]  # length(x), width(y)
 spacing = (0.4, 0.1)  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 0.8  # (s)
@@ -53,13 +53,13 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
     t = np.arange(0, simulation_time, T_control)
     zk_ref_x = (zk_min_x + zk_max_x)/2
     zk_ref_y = (zk_min_y + zk_max_y)/2
-    # plt.plot(t, zk_ref_x, label="zk_ref_x")
-    # plt.plot(t, zk_ref_y, label="zk_ref_y")
-    # plt.xlabel("time (s)")
-    # plt.ylabel("cop_reference (m)")
-    # plt.title("footstep references in time")
-    # plt.legend()
-    # plt.show()
+    plt.plot(t, zk_ref_x, label="zk_ref_x")
+    plt.plot(t, zk_ref_y, label="zk_ref_y")
+    plt.xlabel("time (s)")
+    plt.ylabel("cop_reference (m)")
+    plt.title("footstep references in time")
+    plt.legend()
+    plt.show()
 
     plt.scatter(zk_ref_x, zk_ref_y)
     plt.show()
@@ -74,28 +74,28 @@ def move(trajectory_type, debug=False, store=False, perturbations=None):
 
     # TODO : The visualization for x and y is shifted by one step, but it is correct
 
-    # # Plot the results
-    # plt.plot(t, cop_x, label="cop")
-    # plt.plot(t, com_x, label="com")
-    # plt.plot(t, zk_min_x, linewidth=0.7)
-    # plt.plot(t, zk_max_x, linewidth=0.7)
-    # plt.title("x movement")
-    # plt.xlabel("time (s)")
-    # plt.ylabel("x (m)")
-    # # plt.ylim(0,2)
-    # plt.legend()
-    # plt.show()
+    # Plot the results
+    plt.plot(t, cop_x, label="cop")
+    plt.plot(t, com_x, label="com")
+    plt.plot(t, zk_min_x, linewidth=0.7)
+    plt.plot(t, zk_max_x, linewidth=0.7)
+    plt.title("x movement")
+    plt.xlabel("time (s)")
+    plt.ylabel("x (m)")
+    # plt.ylim(0,2)
+    plt.legend()
+    plt.show()
 
-    # plt.plot(t, cop_y, label="cop")
-    # plt.plot(t, com_y, label="com")
-    # plt.plot(t, zk_min_y, linewidth=0.7)
-    # plt.plot(t, zk_max_y, linewidth=0.7)
-    # # plt.ylim((-0.8, 0.8))
-    # plt.title("y movement")
-    # plt.xlabel("time (s)")
-    # plt.ylabel("x (m)")
-    # plt.legend()
-    # plt.show()
+    plt.plot(t, cop_y, label="cop")
+    plt.plot(t, com_y, label="com")
+    plt.plot(t, zk_min_y, linewidth=0.7)
+    plt.plot(t, zk_max_y, linewidth=0.7)
+    # plt.ylim((-0.8, 0.8))
+    plt.title("y movement")
+    plt.xlabel("time (s)")
+    plt.ylabel("x (m)")
+    plt.legend()
+    plt.show()
 
 
 
@@ -118,7 +118,7 @@ def main():
     # trajectory_type = input("Enter trajectory type: ")
     trajectory_type = "circle"
     perturbations = [Perturbation(0, 0.6, 6)]
-    move(trajectory_type, debug=True)
+    move(trajectory_type, debug=False)
 
 
 if __name__ == "__main__":

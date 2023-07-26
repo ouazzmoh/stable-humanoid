@@ -250,7 +250,7 @@ class MPC:
             # assert np.all(h_cond == retrieve_problem_data_from_file(file, i)["h"])
 
         if self.debug:
-            num_frames = 30  # Number of frames to plot
+            num_frames = 10  # Number of frames to plot
             if i % (int(self.simulation_time / self.T_control) // num_frames) == 0:
                 visuals.plot_intermediate_states(i, curr_xk, curr_yk, self.prediction_time, self.T_pred, T, solution,
                                                  self.robot.h, self.g, N, zk_ref_pred_x,

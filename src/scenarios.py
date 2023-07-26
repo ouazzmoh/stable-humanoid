@@ -338,23 +338,23 @@ def construct_zmin_zmax_circle(total_duration, duration_double_init, duration_st
                               orientation=np.pi / 2,
                               shift=0))
     # First step
-    footsteps_cos.append(Step(duration_step + duration_double_init,
-                          2 * duration_step + duration_double_init,
-                          z_min=radius + (d - width/2),
-                          z_max=radius + (d + width/2),
-                          which_foot="right",
-                          orientation=np.pi / 2,
-                          shift=0))
-    footsteps_sin.append(Step(0,
-                              duration_double_init,
+    footsteps_cos.append(Step(duration_double_init,
+                              duration_step + duration_double_init,
+                              z_min=radius - (d - width/2),
+                              z_max=radius - (d + width/2),
+                              which_foot="left",
+                              orientation=np.pi / 2,
+                              shift=0))
+    footsteps_sin.append(Step(duration_double_init,
+                              duration_step + duration_double_init,
                               z_min=0,
                               z_max=0,
                               which_foot="double_support",
                               orientation=np.pi / 2,
                               shift=0))
-    thetas = np.linspace(0, np.pi/2, number_of_steps)
+    thetas = np.linspace(0, 2 * np.pi - np.pi/12, number_of_steps)
 
-    for i in range(2, number_of_steps):
+    for i in range(1, number_of_steps):
         theta = thetas[i]
         center_around_cos = radius * np.cos(theta) # If the robot had double support this would be the center
         center_around_sin = radius * np.sin(theta) # If the robot had double support this would be the center
