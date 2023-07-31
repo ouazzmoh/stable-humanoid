@@ -17,8 +17,10 @@ alpha = 1  # Weight for safety distance of the plane
 beta = 1  # Weight for smoothing
 epsilon = 1e-6  # Precision of how close is the normal of the plane a unit vector
 
-robot_vertices = [(3, 0, 0)] * round(simulation_time / T_control)
-person_vertices = [(0, 0, 0)] * round(simulation_time / T_control)
+robot_vertices, person_vertices = [], []
+for i in range(0, round(simulation_time / T_control)):
+    robot_vertices.append((3 + i *0.03, 0, 0))
+    person_vertices.append((0 + + i *0.03, 0, 0))
 
 robot_arm = RobotArm(robot_vertices)
 person = Person(person_vertices)
@@ -26,8 +28,12 @@ person = Person(person_vertices)
 
 def main():
     plane_solver = SolvePlane(robot_arm, person, simulation_time, beta, alpha, epsilon)
-    res1 = plane_solver.run_iteration(0)
+    ress = []
+    for i in range(99):
+        res = plane_solver.run_iteration(i)
+        ress.append(res)
 
+    print(ress)
     # Normal vector components and scalar:
     a, b, c, d = 1, 1, 1, 1
     # example values, replace with your own
