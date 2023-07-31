@@ -272,7 +272,7 @@ class MPC:
         self.robot.set_positional_attributes(next_x, next_y, steps, self.g)
 
 
-    def run_MPC(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def run_MPC(self, filename=None) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Run the full iterations of the MPC
         Returns:
@@ -300,9 +300,12 @@ class MPC:
 
         # Run the simulation
         if self.write_hdf5:
-            # The storing process currently supports up to 4 digits 0 < i < 9999
-            file_path = get_file_path(self.name)
-            file = h5.File(file_path, "a")
+            if filename is None:
+                raise ValueError("Please provide a filename to store the data")
+            else :
+                # The storing process currently supports up to 4 digits 0 < i < 9999
+                file_path = get_file_path(filename)
+                file = h5.File(file_path, "a")
 
         for i in range(int(self.simulation_time / self.T_control)):
             # Solve one iteration of the MPC and update the state of the robot

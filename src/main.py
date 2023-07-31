@@ -206,7 +206,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
     #     # Run the MPC iteration and update the robot state
     #     controller.MPC_iteration(i, N, T, file=None)
 
-    com_x, com_y, cop_x, cop_y = controller.run_MPC()
+    com_x, com_y, cop_x, cop_y = controller.run_MPC(filename=filename)
     # print(len(com_x))
 
     seen = []
@@ -287,7 +287,6 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
     src_l = configuration.get_transform_frame_to_world("l_ankle").copy()
     src_l = src_l.translation
     time = 0.0
-    file = None
     if store:
         if filename is None:
             raise ValueError("Please provide a filename to store the data")
@@ -360,8 +359,8 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
 
 
 def main():
-    trajectory_type = "upwards_turning"
-    move(trajectory_type, debug=False)
+    trajectory_type = "upwards"
+    move(trajectory_type, debug=False, store=True, filename="UpwardsWalk")
 
 
 if __name__ == "__main__":
