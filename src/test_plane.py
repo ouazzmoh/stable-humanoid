@@ -19,8 +19,8 @@ epsilon = 1e-6  # Precision of how close is the normal of the plane a unit vecto
 
 robot_vertices, person_vertices = [], []
 for i in range(0, round(simulation_time / T_control)):
-    robot_vertices.append((3 + i *0.03, 0, 0))
-    person_vertices.append((0 + + i *0.03, 0, 0))
+    robot_vertices.append((3 + i *0.3, 0, 0))
+    person_vertices.append((0 + i *0.3 , 0, 0))
 
 robot_arm = RobotArm(robot_vertices)
 person = Person(person_vertices)
@@ -28,35 +28,42 @@ person = Person(person_vertices)
 
 def main():
     plane_solver = SolvePlane(robot_arm, person, simulation_time, beta, alpha, epsilon)
-    ress = []
+    planes = []
     for i in range(99):
         res = plane_solver.run_iteration(i)
-        ress.append(res)
+        planes.append(res)
 
-    print(ress)
-    # Normal vector components and scalar:
-    a, b, c, d = 1, 1, 1, 1
-    # example values, replace with your own
+    print(planes)
+    # Number of frames to skip
+    n = len(planes) // 10  # adjust this to control the number of frames
 
-    # Create a grid of x and y values
-    x = np.linspace(-10, 10, 100)
-    y = np.linspace(-10, 10, 100)
+    x = np.linspace(-10, 10, 20)
+    y = np.linspace(-10, 10, 20)
     x, y = np.meshgrid(x, y)
 
-    # Solve for z values
-    z = (d - a * x - b * y) / c
+    # Loop over the planes and plot each nth one
+    for i, plane in enumerate(planes[::n]):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        print(robot_vertices[i][0], person_vertices[i][2])
 
-    # Create a 3D plot
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot_surface(x, y, z, color='b', alpha=0.5)
+        plt.plot(robot_vertices[i][0], robot_vertices[i][1], robot_vertices[i][2], 'ro')
+        plt.plot(person_vertices[i][0], person_vertices[i][1], person_vertices[i][2], 'go')
 
-    # Set labels
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
+        normal_vector, constant = plane[0], plane[1]
 
-    plt.show()
+        # We know that normal_vector . <x,y,z> = constant, so we can solve for z
+        z = (constant - normal_vector[0] * x - normal_vector[1] * y) / normal_vector[2]
+
+        # Plot the plane
+        ax.plot_surface(x, y, z, alpha=0.5)
+
+        # Save the plot as an image file.
+        # Change the path and filename as needed.
+        plt.savefig(f"../plane_fig/frame_{i}.png")
+
+        # Clear the current figure for next plot
+        plt.clf()
 
 
 if __name__ == "__main__":
