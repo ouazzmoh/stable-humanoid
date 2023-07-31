@@ -17,8 +17,8 @@ alpha = 1  # Weight for safety distance of the plane
 beta = 1  # Weight for smoothing
 epsilon = 1e-6  # Precision of how close is the normal of the plane a unit vector
 
-robot_vertices = [(0, 0, 0)] * round(simulation_time / T_control)
-person_vertices = [(3, 0, 0)] * round(simulation_time / T_control)
+robot_vertices = [(3, 0, 0)] * round(simulation_time / T_control)
+person_vertices = [(0, 0, 0)] * round(simulation_time / T_control)
 
 robot_arm = RobotArm(robot_vertices)
 person = Person(person_vertices)

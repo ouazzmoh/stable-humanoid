@@ -24,8 +24,7 @@ class SolvePlane:
         self.solver = solver
         # TODO: Initialize it like this for now : Starting from the first point of the robot arm
         self.ak_p = (1, 0, 0)
-        self.bk_p = self.ak_p[0]*self.robot_arm.vertices[0][0] + self.ak_p[1]*self.robot_arm.vertices[0][1] + \
-                    self.ak_p[2]*self.robot_arm.vertices[0][2]
+        self.bk_p = 1.5
 
     def construct_objective_function(self,
                                      ak_p : np.ndarray,
@@ -35,7 +34,7 @@ class SolvePlane:
         Q = np.block([[self.beta * np.eye(3), np.zeros((3, 2))],
                       [np.zeros((2, 3)), mat]])
 
-        p = np.append(- self.beta * ak_p, [- self.beta * bk_p, -1])
+        p = np.array([-self.beta * ak_p[0], -self.beta * ak_p[1], -self.beta * ak_p[2], -self.alpha * bk_p, -1])
 
         return Q, p
 
@@ -81,7 +80,7 @@ class SolvePlane:
 
         if solution is None:
             # TODO: Treat this case properly
-            raise ValueError(f"Cannot find the plane for iteration {i}")
+            raise ValueError(f"Cannot find the plane for iteration")
 
         curr_ak = solution[0:3]
         curr_bk = solution[3]
