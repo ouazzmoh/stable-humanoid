@@ -120,8 +120,8 @@ spacing = (
 duration_double_init = 0.8  # (s)
 duration_step = 0.8  # (s)
 steps = int(simulation_time / T_control)
-alpha = 1  # Weight for jerk
-gamma = 1e3  # Weight for zk_ref
+alpha = 1e3  # Weight for jerk
+gamma = 1  # Weight for zk_ref
 beta = 1  # Weight for velocity
 average_speed = (0.3, 0)
 stop_at = (8, 10)  # (s)
@@ -131,7 +131,7 @@ robot_mpc = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1]
 
 def move(trajectory_type, debug=False, store=False, perturbations=None, filename=None):
     # Problem variables
-    xk_init = (0, 0, 0)
+    xk_init = (2, 0, 0)
     yk_init = (0, 0, 0)
     # Footstep planning
     step_planner = FootstepPlanner(
@@ -258,7 +258,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
         posture_task,
         pelvis_task,
         right_foot_task,
-        com_task,
+        # com_task,
     ]
     # setting the target of the tasks
     pelvis_task.set_target_from_configuration(configuration)
@@ -315,7 +315,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
             rate,
             visualizer=viz,
             time=time,
-            file=file,
+            file=filename,
             store_qp=store,
             iteration=i_store,
         )
@@ -345,7 +345,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
             rate,
             visualizer=viz,
             time=time,
-            file=file,
+            file=filename,
             store_qp=store,
             iteration=i_store,
         )
@@ -359,8 +359,8 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
 
 
 def main():
-    trajectory_type = "upwards"
-    move(trajectory_type, debug=False, store=True, filename="UpwardsWalk")
+    trajectory_type = "circle"
+    move(trajectory_type, debug=False)
 
 
 if __name__ == "__main__":
