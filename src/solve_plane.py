@@ -23,31 +23,29 @@ class SolvePlane:
         self.epsilon = epsilon
         self.solver = solver
         # TODO: Initialize it like this for now : Starting from the first point of the robot arm
-        self.ak_p = (1, 0, 0)
+        self.ak_p = (1, 0, 1)
         self.bk_p = 1.5
 
-    def construct_objective_function(self,
-                                     ak_p : np.ndarray,
-                                     bk_p : float):
+    def construct_objective_function(self):
 
-        mat = np.array([self.beta, 0, 0, self.alpha]).reshape((2, 2))
-        Q = np.block([[self.beta * np.eye(3), np.zeros((3, 2))],
+        mat = np.array([2*self.beta, 0, 0, 2*self.alpha]).reshape((2, 2))
+        Q = np.block([[2*self.beta * np.eye(3), np.zeros((3, 2))],
                       [np.zeros((2, 3)), mat]])
 
-        p = np.array([-self.beta * ak_p[0], -self.beta * ak_p[1], -self.beta * ak_p[2], -self.alpha * bk_p, -1])
+        p = np.array([-2*self.beta * self.ak_p[0], -2*self.beta * self.ak_p[1], -2*self.beta * self.ak_p[2],
+                      -2*self.beta * self.bk_p, -1])
 
         return Q, p
 
     def construct_constraint_matrix(self,
-                                    k : int,
-                                    ak_p : np.ndarray):
+                                    k : int):
         lines_G = []
         l1 = [*self.person.vertices[k], -1, 0]
         l2 = [*self.person.vertices[k+1], -1, 0]
         l3 = [*self.robot_arm.vertices[k], 1, 1]
         l4 = [*self.robot_arm.vertices[k+1], 1, 1]
-        l5 = [*ak_p, 0, 0]
-        l6 = [*ak_p, 0, 0]
+        l5 = [*self.ak_p, 0, 0]
+        l6 = [*self.ak_p, 0, 0]
         for i in range(3):
             l3[i] = -l3[i]
             l4[i] = -l4[i]
@@ -72,9 +70,9 @@ class SolvePlane:
     def run_iteration(self,
                       k : int):
 
-        Q, p = self.construct_objective_function(self.ak_p, self.bk_p)
+        Q, p = self.construct_objective_function()
 
-        G, h_cond, lb, ub = self.construct_constraint_matrix(k, self.ak_p)
+        G, h_cond, lb, ub = self.construct_constraint_matrix(k)
 
         solution = solve_qp(P=Q, q=p, G=G, h=h_cond, lb=lb, ub=ub, solver=self.solver)
 
