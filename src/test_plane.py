@@ -15,7 +15,7 @@ T_control = 100e-3
 simulation_time = 10
 prediction_time = 2
 alpha = 1e-3  # Weight for safety distance of the plane(Higher weight the more it is minimized)
-beta = 1e-6 # Weight for smoothing
+beta = 1e-12 # Weight for smoothing
 epsilon = 1e-3 # Precision of how close is the normal of the plane a unit vector
 
 robot_vertices1, person_vertices1 = [], []
@@ -32,13 +32,14 @@ for i in range(0, round(simulation_time / T_control)):
 
     person_vertices1.append((1 + i *0.3, 0, 0)) # COM
     person_vertices2.append((1 + i * 0.3, 0, 2)) # HEAD
-    person_vertices3.append((0 + i * 0.3, 0, -2)) # Left foot
-    person_vertices4.append((2 + i * 0.3, 0, -2)) # Right foot
-    person_vertices5.append((0 + i * 0.3, 0, 0)) # Left hand
-    person_vertices6.append((2 + i * 0.3, 0, 0))  # Right hand
+    person_vertices3.append((0.3 + i * 0.3, 0, -2)) # Left foot
+    person_vertices4.append((1.7 + i * 0.3, 0, -2)) # Right foot
+    person_vertices5.append((0 + i * 0.3, 0, .5)) # Left hand
+    person_vertices6.append((2 + i * 0.3, 0, .5))  # Right hand
 
 robot_vertices = [robot_vertices1, robot_vertices2, robot_vertices3]
-person_vertices = [person_vertices2]
+person_vertices = [person_vertices1, person_vertices2, person_vertices3, person_vertices4, person_vertices5,
+                   person_vertices6]
 
 robot_arm = RobotArm(robot_vertices)
 person = Person(person_vertices)
@@ -56,8 +57,8 @@ def main():
     n = len(planes) // 50  # adjust this to control the number of frames
 
     # x range
-    x_range = np.linspace(-10, 10, 100)
-    z_range = np.linspace(-10, 10, 100)
+    x_range = np.linspace(0, 10, 100)
+    z_range = np.linspace(0, 10, 100)
 
     # Loop over the planes and plot each nth one
     for i, plane in enumerate(planes):
@@ -89,10 +90,16 @@ def main():
         # Fixing the precision of the plotting -> what to consider a 0 ?
         slope = -normal_vector[0] / normal_vector[2] if abs(normal_vector[2]) > 1e-13 else 0
 
-        ax.plot(np.ones_like(z_range) * x_intercept + slope * x_range, x_range, label=f'Plane {i}')
+        x = np.linspace(0, 40 , 100)
+        y = slope * x + z_intercept
+
+        ax.plot(x, y, label="Separating Plane")
         plt.xlim((0, 35))
+        plt.ylim((-10, 10))
         # Save the plot as an image file.
         # Pad for the converter to generate a good gif
+        plt.title("Separating plane between robot(red) and person (green)")
+        plt.legend()
         plt.savefig(f"../plane_fig/frame_{i:03}.png")
         plt.clf()
 

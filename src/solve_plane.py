@@ -79,7 +79,7 @@ class SolvePlane:
 
         if solution is None:
             # TODO: Treat this case properly
-            raise ValueError(f"Cannot find the plane for iteration{k}")
+            raise ValueError(f"Cannot find the plane for iteration  : {k}")
 
         curr_ak = solution[0:3]
         curr_bk = solution[3]
