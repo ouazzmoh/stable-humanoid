@@ -87,7 +87,7 @@ class SolvePlane:
         return G, h, lb, ub
 
     def run_iteration(self,
-                      k : int):
+                      k: int):
 
         Q, p = self.construct_objective_function()
 
@@ -97,7 +97,7 @@ class SolvePlane:
 
         if solution is None:
             # TODO: Treat this case properly
-            raise ValueError(f"Cannot find the plane for iteration")
+            raise ValueError(f"Cannot find the plane for iteration{k}")
 
         curr_ak = solution[0:3]
         curr_bk = solution[3]

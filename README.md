@@ -1,5 +1,12 @@
+## Alt 
 
-## Project Description
+### Plane separation
+![alt plane separtion](animate_plane.gif)
+
+
+
+
+## Project Description 
 
 This project provides an implementation of an MPC for bipedal robot walking. The controller allows the robot to maintain its balance while walking at different speeds. The controller also features robustness against disturbances and the ability to react to changes in the environment.
 The key steps in the MPC approach are:

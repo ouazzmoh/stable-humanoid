@@ -14,9 +14,9 @@ T_pred = 100e-3
 T_control = 100e-3
 simulation_time = 10
 prediction_time = 2
-alpha = 1  # Weight for safety distance of the plane(Higher weight the more it is minimized)
-beta = 1 # Weight for smoothing
-epsilon = 1e-5 # Precision of how close is the normal of the plane a unit vector
+alpha = 1e-3  # Weight for safety distance of the plane(Higher weight the more it is minimized)
+beta = 1e-6 # Weight for smoothing
+epsilon = 1e-3 # Precision of how close is the normal of the plane a unit vector
 
 robot_vertices1, person_vertices1 = [], []
 robot_vertices2, person_vertices2 = [], []
@@ -25,7 +25,7 @@ for i in range(0, round(simulation_time / T_control)):
     person_vertices1.append((0 + i *0.3, 0, 0))
 
     robot_vertices2.append((3 + i * 0.3, 0, 5))
-    person_vertices2.append((0 + i * 0.3, 0, 3))
+    person_vertices2.append((0 + i * 0.3 + 2, 0, 3))
 
 robot_vertices = [robot_vertices1, robot_vertices2]
 person_vertices = [person_vertices1, person_vertices2]
@@ -40,9 +40,6 @@ def main():
     for i in range(int(simulation_time / T_control) - 1):
         res = plane_solver.run_iteration(i)
         planes.append(res)
-
-
-
 
 
     # Number of frames to skip
@@ -78,19 +75,18 @@ def main():
         x_intercept = constant / normal_vector[0]
         z_intercept = constant / normal_vector[2]
 
-        # plot the line representing the plane in 2D
-        slope = -normal_vector[0] / normal_vector[2] if normal_vector[2] != 0 else 0
+        # plot the line representing the plane in 2D:
+        # Fixing the precision of the plotting -> what to consider a 0 ?
+        slope = -normal_vector[0] / normal_vector[2] if abs(normal_vector[2]) > 1e-13 else 0
 
         ax.plot(np.ones_like(z_range) * x_intercept + slope * x_range, x_range, label=f'Plane {i}')
         plt.xlim((0, 35))
         # Save the plot as an image file.
-        # Change the path and filename as needed.
-        plt.savefig(f"../plane_fig/frame_{i}.png")
-
-        # Clear the current figure for next plot
+        # Pad for the converter to generate a good gif
+        plt.savefig(f"../plane_fig/frame_{i:03}.png")
         plt.clf()
 
 
 if __name__ == "__main__":
     main()
-    subprocess.run("convert -delay 10 ../plane_fig/frame* ../animate_plane.gif", check=True, shell=True)
+    subprocess.run("convert -delay 1 ../plane_fig/frame* ../animate_plane.gif", check=True, shell=True)
