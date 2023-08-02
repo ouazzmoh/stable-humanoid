@@ -35,7 +35,7 @@ for i in range(0, round(simulation_time / T_control)):
     person_vertices3.append((0.3 + i * 0.3, 0, -2)) # Left foot
     person_vertices4.append((1.7 + i * 0.3, 0, -2)) # Right foot
     person_vertices5.append((0 + i * 0.3, 0, .5)) # Left hand
-    person_vertices6.append((2 + i * 0.3, 0, .5))  # Right hand
+    person_vertices6.append((2 + i * 0.3 , 0, .5))  # Right hand
 
 robot_vertices = [robot_vertices1, robot_vertices2, robot_vertices3]
 person_vertices = [person_vertices1, person_vertices2, person_vertices3, person_vertices4, person_vertices5,
