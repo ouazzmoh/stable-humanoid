@@ -24,7 +24,7 @@ class SolvePlane:
         self.solver = solver
         # TODO: Initialize it like this for now : Starting from the first point of the robot arm
         self.ak_p = (1, 0, 0)
-        self.bk_p = 1.5
+        self.bk_p = 3
 
     def construct_objective_function(self):
 
@@ -58,24 +58,6 @@ class SolvePlane:
         norm_condition.append([*self.ak_p, 0, 0])
         norm_condition.append([-self.ak_p[0], -self.ak_p[1], -self.ak_p[2], 0, 0])
 
-        # l1 = [*self.person.vertices[0][k], -1, 0]
-        # l2 = [*self.person.vertices[0][k+1], -1, 0]
-        # l3 = [*self.robot_arm.vertices[0][k], 1, 1]
-        # l4 = [*self.robot_arm.vertices[0][k+1], 1, 1]
-        # l5 = [*self.ak_p, 0, 0]
-        # l6 = [*self.ak_p, 0, 0]
-        # for i in range(3):
-        #     l3[i] = -l3[i]
-        #     l4[i] = -l4[i]
-        #     l6[i] = -l6[i]
-        # lines_G.append(l1)
-        # lines_G.append(l2)
-        # lines_G.append(l3)
-        # lines_G.append(l4)
-        # lines_G.append(l5)
-        # lines_G.append(l6)
-        #
-        # G = np.array(lines_G)
         G = np.array(person_vertices_lines + robot_vertices_lines + norm_condition)
 
         h = np.zeros(len(person_vertices_lines) + len(robot_vertices_lines))

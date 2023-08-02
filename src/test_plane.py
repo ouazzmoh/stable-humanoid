@@ -20,15 +20,25 @@ epsilon = 1e-3 # Precision of how close is the normal of the plane a unit vector
 
 robot_vertices1, person_vertices1 = [], []
 robot_vertices2, person_vertices2 = [], []
+robot_vertices3, person_vertices3 = [], []
+robot_vertices4, person_vertices4 = [], []
+person_vertices5 = []
+person_vertices6 = []
+
 for i in range(0, round(simulation_time / T_control)):
-    robot_vertices1.append((3 + i *0.3, 0, 0))
-    person_vertices1.append((0 + i *0.3, 0, 0))
+    robot_vertices1.append((8 + i *0.3, 0, 0))
+    robot_vertices2.append((5 + i * 0.3, 0, 0))
+    robot_vertices3.append((4 + i * 0.3, 0, 5))  # end effector
 
-    robot_vertices2.append((3 + i * 0.3, 0, 5))
-    person_vertices2.append((0 + i * 0.3 + 2, 0, 3))
+    person_vertices1.append((1 + i *0.3, 0, 0)) # COM
+    person_vertices2.append((1 + i * 0.3, 0, 2)) # HEAD
+    person_vertices3.append((0 + i * 0.3, 0, -2)) # Left foot
+    person_vertices4.append((2 + i * 0.3, 0, -2)) # Right foot
+    person_vertices5.append((0 + i * 0.3, 0, 0)) # Left hand
+    person_vertices6.append((2 + i * 0.3, 0, 0))  # Right hand
 
-robot_vertices = [robot_vertices1, robot_vertices2]
-person_vertices = [person_vertices1, person_vertices2]
+robot_vertices = [robot_vertices1, robot_vertices2, robot_vertices3]
+person_vertices = [person_vertices2]
 
 robot_arm = RobotArm(robot_vertices)
 person = Person(person_vertices)
