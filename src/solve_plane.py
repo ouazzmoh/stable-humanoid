@@ -23,7 +23,7 @@ class SolvePlane:
         self.epsilon = epsilon
         self.solver = solver
         # TODO: Initialize it like this for now : Starting from the first point of the robot arm
-        self.ak_p = (1, 0, 1)
+        self.ak_p = (1, 0, 0)
         self.bk_p = 1.5
 
     def construct_objective_function(self):
@@ -38,28 +38,47 @@ class SolvePlane:
         return Q, p
 
     def construct_constraint_matrix(self,
-                                    k : int):
-        lines_G = []
-        l1 = [*self.person.vertices[k], -1, 0]
-        l2 = [*self.person.vertices[k+1], -1, 0]
-        l3 = [*self.robot_arm.vertices[k], 1, 1]
-        l4 = [*self.robot_arm.vertices[k+1], 1, 1]
-        l5 = [*self.ak_p, 0, 0]
-        l6 = [*self.ak_p, 0, 0]
-        for i in range(3):
-            l3[i] = -l3[i]
-            l4[i] = -l4[i]
-            l6[i] = -l6[i]
-        lines_G.append(l1)
-        lines_G.append(l2)
-        lines_G.append(l3)
-        lines_G.append(l4)
-        lines_G.append(l5)
-        lines_G.append(l6)
+                                    k: int):
+        # lines_G = []
 
-        G = np.array(lines_G)
+        person_vertices_lines = []
+        robot_vertices_lines = []
+        norm_condition = []
 
-        h = np.zeros(len(lines_G)-2)
+        for vertex in self.person.vertices:
+            person_vertices_lines.append([*vertex[k], -1, 0])
+            person_vertices_lines.append([*vertex[k+1], -1, 0])
+
+        for vertex in self.robot_arm.vertices:
+            robot_vertices_lines.append([-vertex[k][0], -vertex[k][1],
+                                         -vertex[k][2], 1, 1])
+            robot_vertices_lines.append([-vertex[k+1][0], -vertex[k+1][1],
+                                         -vertex[k+1][2], 1, 1])
+
+        norm_condition.append([*self.ak_p, 0, 0])
+        norm_condition.append([-self.ak_p[0], -self.ak_p[1], -self.ak_p[2], 0, 0])
+
+        # l1 = [*self.person.vertices[0][k], -1, 0]
+        # l2 = [*self.person.vertices[0][k+1], -1, 0]
+        # l3 = [*self.robot_arm.vertices[0][k], 1, 1]
+        # l4 = [*self.robot_arm.vertices[0][k+1], 1, 1]
+        # l5 = [*self.ak_p, 0, 0]
+        # l6 = [*self.ak_p, 0, 0]
+        # for i in range(3):
+        #     l3[i] = -l3[i]
+        #     l4[i] = -l4[i]
+        #     l6[i] = -l6[i]
+        # lines_G.append(l1)
+        # lines_G.append(l2)
+        # lines_G.append(l3)
+        # lines_G.append(l4)
+        # lines_G.append(l5)
+        # lines_G.append(l6)
+        #
+        # G = np.array(lines_G)
+        G = np.array(person_vertices_lines + robot_vertices_lines + norm_condition)
+
+        h = np.zeros(len(person_vertices_lines) + len(robot_vertices_lines))
         h = np.append(h, [1, self.epsilon - 1])
 
         lb = np.array([-1, -1, -1, -np.inf, -np.inf])

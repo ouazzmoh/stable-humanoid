@@ -16,12 +16,19 @@ simulation_time = 10
 prediction_time = 2
 alpha = 1  # Weight for safety distance of the plane(Higher weight the more it is minimized)
 beta = 1 # Weight for smoothing
-epsilon = 1e-9 # Precision of how close is the normal of the plane a unit vector
+epsilon = 1e-5 # Precision of how close is the normal of the plane a unit vector
 
-robot_vertices, person_vertices = [], []
+robot_vertices1, person_vertices1 = [], []
+robot_vertices2, person_vertices2 = [], []
 for i in range(0, round(simulation_time / T_control)):
-    robot_vertices.append((3 + i *0.3, 0, 3 + i *0.3))
-    person_vertices.append((0 + i *0.3, 0, 0 + i *0.3))
+    robot_vertices1.append((3 + i *0.3, 0, 0))
+    person_vertices1.append((0 + i *0.3, 0, 0))
+
+    robot_vertices2.append((3 + i * 0.3, 0, 5))
+    person_vertices2.append((0 + i * 0.3, 0, 3))
+
+robot_vertices = [robot_vertices1, robot_vertices2]
+person_vertices = [person_vertices1, person_vertices2]
 
 robot_arm = RobotArm(robot_vertices)
 person = Person(person_vertices)
@@ -30,11 +37,14 @@ person = Person(person_vertices)
 def main():
     plane_solver = SolvePlane(robot_arm, person, simulation_time, beta, alpha, epsilon)
     planes = []
-    for i in range(99):
+    for i in range(int(simulation_time / T_control) - 1):
         res = plane_solver.run_iteration(i)
         planes.append(res)
 
-    print(planes)
+
+
+
+
     # Number of frames to skip
     n = len(planes) // 50  # adjust this to control the number of frames
 
@@ -44,16 +54,23 @@ def main():
 
     # Loop over the planes and plot each nth one
     for i, plane in enumerate(planes):
+        print(f"------------- Iteration {i} ---------")
+        print(f"Plane : {planes[i]}")
         fig, ax = plt.subplots()
 
         ax.set_xlabel('X')
         ax.set_ylabel('Z')
 
         # Print robot vertices
-        print(robot_vertices[i][0], person_vertices[i][0])
+        print("Robot vertices")
+        for r_vertex in robot_vertices:
+            print(r_vertex[i])
+            ax.plot(r_vertex[i][0], r_vertex[i][2], 'ro')
 
-        ax.plot(robot_vertices[i][0], robot_vertices[i][2], 'ro')
-        ax.plot(person_vertices[i][0], person_vertices[i][2], 'go')
+        print("Person vertices")
+        for p_vertex in person_vertices:
+            print(p_vertex[i])
+            ax.plot(p_vertex[i][0], p_vertex[i][2], 'go')
 
         normal_vector, constant = plane[0], plane[1]
 
@@ -62,10 +79,9 @@ def main():
         z_intercept = constant / normal_vector[2]
 
         # plot the line representing the plane in 2D
-        slope = -normal_vector[0] / normal_vector[2]
-        intercept = constant / normal_vector[2]
+        slope = -normal_vector[0] / normal_vector[2] if normal_vector[2] != 0 else 0
 
-        ax.plot(np.ones_like(z_range) * intercept + slope * x_range, x_range, label=f'Plane {i}')
+        ax.plot(np.ones_like(z_range) * x_intercept + slope * x_range, x_range, label=f'Plane {i}')
         plt.xlim((0, 35))
         # Save the plot as an image file.
         # Change the path and filename as needed.
