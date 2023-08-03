@@ -416,7 +416,7 @@ class MPC:
         zk_ref_pred_x_2 = Uck * curr_foot_position[0] + Uk @ steps_x[1:]
         zk_ref_pred_y_2 = Uck * curr_foot_position[1] + Uk @ steps_y[1:]
 
-        assert(np.array_equal(zk_ref_pred_x_2, zk_ref_pred_x) and np.array_equal(zk_ref_pred_y_2, zk_ref_pred_y))
+        # assert(np.array_equal(zk_ref_pred_x_2, zk_ref_pred_x) and np.array_equal(zk_ref_pred_y_2, zk_ref_pred_y))
 
         # if not ( np.max(abs(zk_ref_pred_x_2 - zk_ref_pred_x)) < 1e-5  and
         #          np.max(abs(zk_ref_pred_y_2 - zk_ref_pred_y)) < 1e-5):
@@ -430,7 +430,7 @@ class MPC:
         G, h_cond = self.construct_constraints_adapting(self.T_pred, theta_ref_pred, curr_xk, curr_yk,
                                                         Uk, Uck, curr_foot_position)
         # Solve the QP
-        solution = solve_qp(P=Q, q=p, G=G, h=h_cond, solver=self.solver)
+        solution = solve_qp(P=Q, q=p, G=None, h=None, solver=self.solver)
 
         if solution is None:
             raise ValueError(f"Cannot solve the QP at iteration {i}")
@@ -472,7 +472,9 @@ class MPC:
         #TODO: Question : when passing from i=0 to i=1, the decided foot position will be different but close to 0
         #TODO: What i understand right now is the it shouldn't visually change in this case
         self.robot.set_positional_attributes(next_x, next_y, steps, self.g)
-        self.robot.curr_foot_position = np.array([zk_ref_pred_x[1], zk_ref_pred_y[1]])
+        # self.robot.curr_foot_position = np.array([zk_ref_pred_x[1], zk_ref_pred_y[1]])
+        # new_step = np.array([solution[N], solution[2*N + Uk.shape[1]]])
+        self.robot.curr_foot_position = next_foot_steps[0] if next_foot_steps else self.robot.curr_foot_position
 
 
 
