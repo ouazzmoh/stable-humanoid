@@ -41,7 +41,7 @@ robot_vertices = [robot_vertices1, robot_vertices2, robot_vertices3]
 person_vertices = [person_vertices1, person_vertices2, person_vertices3, person_vertices4, person_vertices5,
                    person_vertices6]
 
-robot_arm = RobotArm(init_q=[np.pi/6, np.pi/3], L0=3, L1=3, init_r0=(5, 0, 0))
+robot_arm = RobotArm(init_q=[np.pi/2, 0], L0=3, L1=3, init_r0=(5, 0, 0))
 robot_arm.plan_trajectory(simulation_time, T_control)
 person = Person(person_vertices)
 
@@ -72,7 +72,7 @@ def main():
 
         # Print robot vertices
         print("Robot vertices")
-        for r_vertex in robot_vertices:
+        for r_vertex in robot_arm.vertices:
             print(r_vertex[i])
             ax.plot(r_vertex[i][0], r_vertex[i][2], 'ro')
 
@@ -89,7 +89,7 @@ def main():
 
         # plot the line representing the plane in 2D:
         # Fixing the precision of the plotting -> what to consider a 0 ?
-        slope = -normal_vector[0] / normal_vector[2] if abs(normal_vector[2]) > 1e-13 else 0
+        slope = -normal_vector[0] / normal_vector[2] if abs(normal_vector[2]) > 1e-10 else 0
 
         x = np.linspace(0, 40 , 100)
         y = slope * x + z_intercept

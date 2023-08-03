@@ -13,11 +13,11 @@ class RobotArm:
         self.L0 = L0
         self.L1 = L1
         r0 = init_r0
-        r1 = (r0[0] + L0 * np.cos(init_q[0]), r0[1] + L0 * np.sin(init_q[0]), r0[2])
-        r2 = (r1[0] + L1 * np.cos(init_q[0] + init_q[1]), r1[1] + L1 * np.sin(init_q[0] + init_q[1]), r1[2])
+        r1 = (r0[0] + L0 * np.cos(init_q[0]), r0[1], r0[2] + L0 * np.sin(init_q[0]))
+        r2 = (r1[0] + L1 * np.cos(init_q[0] + init_q[1]), r1[1], r1[2] + L1 * np.sin(init_q[0] + init_q[1]))
         # If we pass exactly the vertices, we don't calculate them
         if vertices is None:
-            vertices = [[r0], [r1], [r2]]
+            self.vertices = [[r0], [r1], [r2]]
         else:
             self.vertices = vertices
 
