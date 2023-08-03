@@ -12,7 +12,7 @@ from controller import MPC
 T_pred = 100e-3  # (s)
 T_control = 100e-3  # (s)
 simulation_time = 10  # (s)
-prediction_time = 2  # (s)
+prediction_time = 4  # (s)
 g = 9.81
 h = 0.8
 foot_dimensions = [0.3, 0.25]  # length(x), width(y)
@@ -20,11 +20,11 @@ spacing = (0.1, 0.4)  # lateral spacing between feet
 duration_double_init = 0.8  # (s)
 duration_step = 0.8  # (s)
 steps = int(simulation_time / T_control)
-alpha = 1e-12  # Weight for jerk
+alpha = 1  # Weight for jerk
 gamma = 1  # Weight for zk_ref
 beta = 1   # Weight for velocity
-average_speed = (0.3, 0)
-stop_at = (8, 10)  # (s)
+average_speed = (0.3, 0.001)
+stop_at = (8, 8)  # (s)
 
 robot = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1])
 

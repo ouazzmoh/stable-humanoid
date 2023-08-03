@@ -259,7 +259,7 @@ class MPC:
                                                curr_xk, curr_yk)
         # Solve the QP
         #TODO: Switch back To add the conditions
-        solution = solve_qp(P=Q, q=p, G=None, h= None, solver=self.solver)
+        solution = solve_qp(P=Q, q=p, G=G, h=h_cond, solver=self.solver)
 
         if solution is None:
             raise ValueError(f"Cannot solve the QP at iteration {i}")
@@ -383,6 +383,9 @@ class MPC:
         zk_ref_pred_x, zk_ref_pred_y, speed_ref_x_pred, speed_ref_y_pred, theta_ref_pred, steps = \
             self.get_prediction_horizon_data(i)
 
+        if i == 0:
+            speed_ref_x_pred = np.array([0] * 8 + [0] * 8 + [0.3] * 8 + [0.3] * 8 + [0.3] * 8)
+            speed_ref_y_pred = np.array([0] * 8 + [-0.2] * 8 + [0.2] * 8 + [-0.2] * 8 + [0.2] * 8)
 
 
         # TODO : Remove this assertion
@@ -430,7 +433,7 @@ class MPC:
         G, h_cond = self.construct_constraints_adapting(self.T_pred, theta_ref_pred, curr_xk, curr_yk,
                                                         Uk, Uck, curr_foot_position)
         # Solve the QP
-        solution = solve_qp(P=Q, q=p, G=None, h=None, solver=self.solver)
+        solution = solve_qp(P=Q, q=p, G=G, h=h_cond, solver=self.solver)
 
         if solution is None:
             raise ValueError(f"Cannot solve the QP at iteration {i}")
@@ -472,9 +475,10 @@ class MPC:
         #TODO: Question : when passing from i=0 to i=1, the decided foot position will be different but close to 0
         #TODO: What i understand right now is the it shouldn't visually change in this case
         self.robot.set_positional_attributes(next_x, next_y, steps, self.g)
-        # self.robot.curr_foot_position = np.array([zk_ref_pred_x[1], zk_ref_pred_y[1]])
+        self.robot.curr_foot_position = np.array([zk_ref_pred_x[1], zk_ref_pred_y[1]])
         # new_step = np.array([solution[N], solution[2*N + Uk.shape[1]]])
-        self.robot.curr_foot_position = next_foot_steps[0] if next_foot_steps else self.robot.curr_foot_position
+        # self.robot.curr_foot_position = next_foot_steps[0] if (next_foot_steps and Uck[1]>0) else\
+        #     self.robot.curr_foot_position
 
 
 
