@@ -359,7 +359,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
 
 
 def main():
-    trajectory_type = "upwards_turning"
+    trajectory_type = "forward"
     move(trajectory_type, debug=False)
 
 
