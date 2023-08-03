@@ -26,9 +26,9 @@ person_vertices5 = []
 person_vertices6 = []
 
 for i in range(0, round(simulation_time / T_control)):
-    robot_vertices1.append((8 + i *0.3, 0, 0))
-    robot_vertices2.append((5 + i * 0.3, 0, 0))
-    robot_vertices3.append((4 + i * 0.3, 0, 5))  # end effector
+    # robot_vertices1.append((8 + i *0.3, 0, 0))
+    # robot_vertices2.append((5 + i * 0.3, 0, 0))
+    # robot_vertices3.append((4 + i * 0.3, 0, 5))  # end effector
 
     person_vertices1.append((1 + i *0.3, 0, 0)) # COM
     person_vertices2.append((1 + i * 0.3, 0, 2)) # HEAD
@@ -41,7 +41,8 @@ robot_vertices = [robot_vertices1, robot_vertices2, robot_vertices3]
 person_vertices = [person_vertices1, person_vertices2, person_vertices3, person_vertices4, person_vertices5,
                    person_vertices6]
 
-robot_arm = RobotArm(robot_vertices)
+robot_arm = RobotArm(init_q=[np.pi/6, np.pi/3], L0=3, L1=3, init_r0=(5, 0, 0))
+robot_arm.plan_trajectory(simulation_time, T_control)
 person = Person(person_vertices)
 
 
