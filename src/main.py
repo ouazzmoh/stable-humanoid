@@ -131,7 +131,7 @@ robot_mpc = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1]
 
 def move(trajectory_type, debug=False, store=False, perturbations=None, filename=None):
     # Problem variables
-    xk_init = (2, 0, 0)
+    xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
     # Footstep planning
     step_planner = FootstepPlanner(
@@ -258,7 +258,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
         posture_task,
         pelvis_task,
         right_foot_task,
-        # com_task,
+        com_task,
     ]
     # setting the target of the tasks
     pelvis_task.set_target_from_configuration(configuration)
@@ -359,7 +359,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
 
 
 def main():
-    trajectory_type = "circle"
+    trajectory_type = "upwards_turning"
     move(trajectory_type, debug=False)
 
 
