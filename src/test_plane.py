@@ -41,7 +41,7 @@ robot_vertices = [robot_vertices1, robot_vertices2, robot_vertices3]
 person_vertices = [person_vertices1, person_vertices2, person_vertices3, person_vertices4, person_vertices5,
                    person_vertices6]
 
-robot_arm = RobotArm(init_q=[np.pi/2, 0], L0=3, L1=3, init_r0=(5, 0, 0))
+robot_arm = RobotArm(init_q=[np.pi/6, np.pi/2], L0=3, L1=3, init_r0=(5, 0, 0))
 robot_arm.plan_trajectory(simulation_time, T_control)
 person = Person(person_vertices)
 
