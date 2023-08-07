@@ -23,8 +23,8 @@ steps = int(simulation_time / T_control)
 alpha = 1  # Weight for jerk
 gamma = 1  # Weight for zk_ref
 beta = 1   # Weight for velocity
-average_speed = (0.3, 0.001)
-stop_at = (8, 8)  # (s)
+average_speed = (0.3, 0)
+stop_at = (8, 10)  # (s)
 
 robot = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1])
 
