@@ -15,7 +15,7 @@ To run the script for a specific scenario, run the following command:
 
 ```bash
 ./main.py 
->Enter trajectory scenario: <forward>  // or <upwards> or <upwards_turning>
+>Choose trajectory type: <forward>  // or <upwards> or <upwards_turning> or <circle>
 ```
 
 #### N.B: 
