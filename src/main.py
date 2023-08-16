@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 
-from visuals import *
-from simulations import *
-
-from robot import Robot
-from perturbation import Perturbation
-from footstep_planner import FootstepPlanner
-from controller import MPC
-import sys
-import meshcat_shapes
-import numpy as np
-import pinocchio as pin
 import qpsolvers
 from loop_rate_limiters import RateLimiter
 import pinocchio as pin
 import pink
 from pink.tasks import FrameTask, PostureTask
 from com_task import ComTask
+import meshcat_shapes
+import argparse
+
+
+from visuals import *
+from simulations import *
+from robot import Robot
+from perturbation import Perturbation
+from footstep_planner import FootstepPlanner
+from controller import MPC
+
+
 from utils import *
 from move_foot import (
     move_foot,
@@ -96,10 +97,10 @@ q_ref = np.array(list_data)
 robot.q0 = q_ref
 configuration = pink.Configuration(robot.model, robot.data, robot.q0)
 
-T_pred = 100e-3  # (s)
-T_control = 100e-3  # (s)
+T_pred = 100e-3  # (s) Sampling time for prediction horizon
+T_control = 100e-3  # (s) Sampling time for control ideal is 5e-3
 simulation_time = 10  # (s)
-prediction_time = 2  # (s)
+prediction_time = 2  # (s) Time for prediction horizon
 g = 9.81
 h = (
     pin.centerOfMass(configuration.model, configuration.data, configuration.q)[2]
@@ -117,10 +118,10 @@ spacing = (
     0.1,
 )
 # lateral spacing between feet
-duration_double_init = 0.8  # (s)
-duration_step = 0.8  # (s)
+duration_double_init = 0.8  # (s)  # Duration of double support at the beginning
+duration_step = 0.8  # (s)  Duration of a step
 steps = int(simulation_time / T_control)
-alpha = 1e3  # Weight for jerk
+alpha = 1  # Weight for jerk
 gamma = 1  # Weight for zk_ref
 beta = 1  # Weight for velocity
 average_speed = (0.3, 0)
@@ -129,7 +130,23 @@ stop_at = (8, 10)  # (s)
 robot_mpc = Robot(h, foot_dimensions, spacing_x=spacing[0], spacing_y=spacing[1])
 
 
-def move(trajectory_type, debug=False, store=False, perturbations=None, filename=None):
+def move(trajectory_type:str,
+         debug: bool = False,
+         store: bool = False,
+         perturbations: Perturbation = None,
+         filename: str =None):
+    """
+    Main function to run the simulation
+    Args:
+        trajectory_type: in forward, upwards, upwards_turning
+        debug: if True, will plot intermediate trajectories for the feet during some prediction horizons
+        store: if True, will store the MPC problems and inverse kinematics problems in hdf5 files, useful for
+               benchmarking
+        perturbations: instance of Perturbation class, it allows applying perturbations to the robot during walking
+        filename: name of the hdf5 file to store the data, only relevant if store is True
+    Returns:
+
+    """
     # Problem variables
     xk_init = (0, 0, 0)
     yk_init = (0, 0, 0)
@@ -330,6 +347,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
     src_l = configuration.get_transform_frame_to_world("l_ankle").copy()
     src_l = src_l.translation
     time = 0.0
+    file=None
     if store:
         if filename is None:
             raise ValueError("Please provide a filename to store the data")
@@ -358,7 +376,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
             rate,
             visualizer=viz,
             time=time,
-            file=filename,
+            file=file,
             store_qp=store,
             iteration=i_store,
         )
@@ -388,7 +406,7 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
             rate,
             visualizer=viz,
             time=time,
-            file=filename,
+            file=file,
             store_qp=store,
             iteration=i_store,
         )
@@ -401,10 +419,25 @@ def move(trajectory_type, debug=False, store=False, perturbations=None, filename
         file.close()
 
 
-def main():
-    trajectory_type = input("Choose a trajectory type from : <forward>, <upwards>, <upwards_turning>, <circular>: ")
-    move(trajectory_type, debug=False)
+def main(trajectory_type, debug, store, filename):
+    # Add perturbation if needed
+    perturbations = [Perturbation(0, 0.6, 6)]
+    move(trajectory_type=trajectory_type, debug=debug, store=store, filename=filename, perturbations=None)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Stable Walking Humanoid Robot")
+    # Main argument
+    parser.add_argument("trajectory_type", type=str, help="trajectory types in forward, upwards, "
+                                                          "upwards_turning")
+    # Optional arguments
+    parser.add_argument("--debug", action="store_true", help="Show intermediate plots")
+    parser.add_argument("--store", action="store_true", help="Store the QP data")
+    parser.add_argument("--filename", type=str, help="Filename to store the QP data")
+
+    args = parser.parse_args()
+    print(args)
+    if args.trajectory_type not in ["forward", "upwards", "upwards_turning"]:
+        raise ValueError("Please provide a valid trajectory type : forward, upwards, upwards_turning")
+
+    main(args.trajectory_type, args.debug, args.store, args.filename)
