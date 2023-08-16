@@ -150,6 +150,8 @@ qpsolvers_benchmark src/mpc_qp.py run
 ```
 
 This will run the benchmark on the scenarios stored as `hdf5` files in the `data` folder. 
-The results will be stored in the `results` folder. 
+The results will be stored in the `results` folder.
+For significant results change the error tolerances in mpc_qp.py based on the specific scenario.
+
 
 
