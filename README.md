@@ -8,15 +8,57 @@ The key steps in the MPC approach are:
 3. **Implementation:** The MPC applies the optimal control actions to the robot.
 
 
+## Requirements
+
+- Python 3.x
+- Additional dependencies are listed below
+
+### Dependencies
+
+The following packages are required:
+
+- pink
+- numpy
+- pinocchio
+- matplotlib
+- qpsolvers
+- meshcat_shapes
+- robot_descriptions
+
+To install these dependencies, you can run the following command:
+
+
+```pip install -r requirements.txt```
+
 ## How to Run the MPC and inverse Kinematics for humanoid robot
 
-The current scenarios for trajectory generation and inverse kinematics are: `forward`, `upwards`, `upwards_turning`
-To run the script for a specific scenario, run the following command:
+### Arguments
 
-```bash
-./main.py 
->Choose trajectory type: <forward>  // or <upwards> or <upwards_turning> or <circle>
-```
+- `trajectory_type` (required): The type of trajectory for the humanoid robot. Must be one of `forward`, `upwards`, or `upwards_turning`.
+- `--debug` (optional): Include this flag to show intermediate plots during the simulation.
+- `--store` (optional): Include this flag to store the QP (Quadratic Programming) data generated during the simulation.
+- `--filename` (optional): Specify a filename (e.g., `output.txt`) to save the QP data. If not provided, the QP data will not be saved.
+
+### Usage
+
+Navigate to the directory containing `main.py` and run the script with the following command:
+
+```./main.py trajectory_type [--debug] [--store] [--filename FILENAME]```
+
+### Examples
+
+1. To simulate a forward walking trajectory without debugging plots:
+
+```./main.py forward```
+
+2. To simulate an upwards walking trajectory and save the QP data with a specific filename:
+
+```./main.py upwards --store --filename UpwardsWalk```
+
+3. To simulate an upwards turning trajectory with debugging plots:
+
+```./main.py upwards_turning --debug```
+
 
 #### N.B: 
 

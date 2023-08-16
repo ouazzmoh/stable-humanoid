@@ -1,0 +1,7 @@
+pink
+numpy
+pinocchio
+matplotlib
+qpsolvers
+meshcat_shapes
+robot_descriptions
