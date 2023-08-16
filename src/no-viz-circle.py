@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
+import matplotlib as plt
 
 from visuals import *
-from simulations import *
-
 from robot import Robot
 from perturbation import Perturbation
 from footstep_planner import FootstepPlanner

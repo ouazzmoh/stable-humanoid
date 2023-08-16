@@ -1,9 +1,10 @@
+import numpy as np
+import matplotlib as plt
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from typing import List
 
-
-from simulations import *
+from utils import next_com
 
 def plot_foot_steps(ax, zk_ref_x, zk_ref_y, theta_ref, foot_dimensions, spacing) -> None:
     """

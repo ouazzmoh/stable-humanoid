@@ -155,4 +155,69 @@ The results will be stored in the `results` folder.
 For significant results change the error tolerances in mpc_qp.py based on the specific scenario.
 
 
+## Project Hierarchy
+
+### src
+
+This folder contains the source code for the MPC and inverse kinematics.
+
+#### bezier_curve : 
+Generates the curve between two points using the Bezier curve algorithm, which is used for the path of the foot
+
+#### com_task : 
+The pink task used to track the center of mass of the robot
+
+#### controller:
+The MPC controller that generates the optimal control actions for the robot
+
+#### footstep_planner:
+Offers different footstep planning algorithms for the robot, currently it offers : forward, upwards, upwards_turning,
+circle(Not stable for inverse kinematics), interactive(Not completely stable)
+Could be extended either by merging the existing scenarios or by adding new ones.
+
+#### main:
+Main script that runs the MPC and inverse kinematics for the robot
+
+#### move_foot:
+Applies inverse kinematics on foot to move it to the desired position
+
+#### mpc: 
+Benchmarking script for the MPC
+
+#### mpc_qp:
+Benchmarking script for the MPC and inverse kinematics
+
+#### no-viz:
+Script that runs the MPC without inverse kinematics
+
+#### no-viz-circle:
+Script that runs the MPC without inverse kinematics for the circular trajectory
+
+#### perturbation:
+A class that allows adding perturbations to the robot during the simulation
+
+#### qp:
+Bechmarking script for the inverse kinematics
+
+#### robot:
+Class that represents a simplified version of the robot.
+
+#### scenarios:
+Holds different functions for generating usual COP reference trajectories
+
+#### step:
+Represent a step of the robot during a certain time
+
+#### utils:
+Contains different utility functions used for the MPC
+
+#### visuals:
+Contains multiple visualization functions
+
+
+
+
+
+
+
 

@@ -8,10 +8,10 @@ from pink.tasks import FrameTask, PostureTask
 from com_task import ComTask
 import meshcat_shapes
 import argparse
+import matplotlib as plt
 
 
 from visuals import *
-from simulations import *
 from robot import Robot
 from perturbation import Perturbation
 from footstep_planner import FootstepPlanner
