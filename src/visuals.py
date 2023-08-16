@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from typing import List

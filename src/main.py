@@ -2,13 +2,13 @@
 
 import qpsolvers
 from loop_rate_limiters import RateLimiter
+
 import pinocchio as pin
 import pink
 from pink.tasks import FrameTask, PostureTask
 from com_task import ComTask
 import meshcat_shapes
 import argparse
-import matplotlib as plt
 
 
 from visuals import *

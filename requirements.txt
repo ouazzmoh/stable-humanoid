@@ -1,6 +1,6 @@
 pink
 numpy
-pin
+pin==2.6.19
 matplotlib
 qpsolvers
 meshcat_shapes

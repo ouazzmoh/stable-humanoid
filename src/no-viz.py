@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 from visuals import *
 from robot import Robot
