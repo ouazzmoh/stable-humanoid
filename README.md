@@ -25,6 +25,7 @@ The following packages are required:
 - qpsolvers
 - meshcat_shapes
 - robot_descriptions
+- loop_rate_limiters
 
 To install these dependencies, you can run the following command:
 
