@@ -7,6 +7,7 @@ The key steps in the MPC approach are:
 2. **Optimization:** The MPC formulates an optimization problem to minimize the difference between the predicted state and the desired state. The optimization problem includes minimization of the jerk, velocity and proximity to reference trajectories.
 3. **Implementation:** The MPC applies the optimal control actions to the robot.
 
+After the MPC is used to generate the stable walking trajectory, we use inverse kinematics via the `pink` library to control the joints of the robot and simulate walking.
 
 ## Requirements
 

@@ -1,6 +1,6 @@
 pink
 numpy
-pinocchio
+pin
 matplotlib
 qpsolvers
 meshcat_shapes
