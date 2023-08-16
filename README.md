@@ -158,62 +158,67 @@ For significant results change the error tolerances in mpc_qp.py based on the sp
 
 ## Project Hierarchy
 
-### src
-
-This folder contains the source code for the MPC and inverse kinematics.
-
-#### bezier_curve : 
+#### src/bezier_curve.py : 
 Generates the curve between two points using the Bezier curve algorithm, which is used for the path of the foot
 
-#### com_task : 
+#### src/com_task.py : 
 The pink task used to track the center of mass of the robot
 
-#### controller:
+#### src/controller.py:
 The MPC controller that generates the optimal control actions for the robot
 
-#### footstep_planner:
+#### src/footstep_planner.py:
 Offers different footstep planning algorithms for the robot, currently it offers : forward, upwards, upwards_turning,
 circle(Not stable for inverse kinematics), interactive(Not completely stable)
 Could be extended either by merging the existing scenarios or by adding new ones.
 
-#### main:
+#### src/main.py:
 Main script that runs the MPC and inverse kinematics for the robot
 
-#### move_foot:
+#### src/move_foot.py:
 Applies inverse kinematics on foot to move it to the desired position
 
-#### mpc: 
+#### src/mpc.py: 
 Benchmarking script for the MPC
 
-#### mpc_qp:
+#### src/mpc_qp.py:
 Benchmarking script for the MPC and inverse kinematics
 
-#### no-viz:
+#### src/no-viz.py:
 Script that runs the MPC without inverse kinematics
 
-#### no-viz-circle:
+#### src/no-viz-circle.py:
 Script that runs the MPC without inverse kinematics for the circular trajectory
 
-#### perturbation:
+#### src/perturbation.py:
 A class that allows adding perturbations to the robot during the simulation
 
-#### qp:
+#### src/qp.py:
 Bechmarking script for the inverse kinematics
 
-#### robot:
+#### src/robot.py:
 Class that represents a simplified version of the robot.
 
-#### scenarios:
+#### src/scenarios.py:
 Holds different functions for generating usual COP reference trajectories
 
-#### step:
+#### src/step.py:
 Represent a step of the robot during a certain time
 
-#### utils:
+#### src/utils.py:
 Contains different utility functions used for the MPC
 
-#### visuals:
+#### src/visuals.py:
 Contains multiple visualization functions
+
+
+## Notes on continuing the project
+
+- The adaptation of the footsteps is in the branch `adapting-3`, it is mostly implemented, but the solution is not stable yet.
+The reason is most likely because there should be an additional constraint on the Y of the robot so it doesn't choose the trivial
+solution of 0 as a solution. 
+- The inverse kinematics of the circular trajectory is not stable. To solve the issue check the dimensions of the foot 
+and the initial position of the com.
 
 
 
