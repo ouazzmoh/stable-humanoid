@@ -1,8 +1,8 @@
-numpy
-matplotlib
-pin==2.6.19
-pink==1.0.0
 qpsolvers
-meshcat_shapes
-robot_descriptions
 loop_rate_limiters
+pin
+pin-pink
+meshcat_shapes
+matplotlib
+h5py
+robot_descriptions
