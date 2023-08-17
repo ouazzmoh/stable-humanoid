@@ -11,21 +11,21 @@ After the MPC is used to generate the stable walking trajectory, we use inverse 
 
 ## Requirements
 
-- Python 3.x
+- Python 3.10
 - Additional dependencies are listed below
 
 ### Dependencies
 
 The following packages are required:
 
-- pink
-- numpy
-- pinocchio
-- matplotlib
 - qpsolvers
-- meshcat_shapes
-- robot_descriptions
 - loop_rate_limiters
+- pinocchio
+- pink
+- meshcat_shapes
+- matplotlib
+- h5py
+- robot_descriptions
 
 To install these dependencies, you can run the following command:
 
