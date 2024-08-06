@@ -1,8 +1,8 @@
 qpsolvers
-loop_rate_limiters
-pin
-pin-pink
-meshcat_shapes
+loop_rate_limiters==0.4.0
+pin==2.6.18
+pin-pink==0.11.0
+meshcat_shapes==0.3.0
 matplotlib
 h5py
-robot_descriptions
+robot_descriptions==1.5.0

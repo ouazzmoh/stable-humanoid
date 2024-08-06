@@ -4,7 +4,8 @@ import qpsolvers
 from loop_rate_limiters import RateLimiter
 
 import pinocchio as pin
-import pink
+# import pink
+from pink import Configuration
 from pink.tasks import FrameTask, PostureTask
 from com_task import ComTask
 import meshcat_shapes
@@ -95,7 +96,7 @@ list_data = [
 ]
 q_ref = np.array(list_data)
 robot.q0 = q_ref
-configuration = pink.Configuration(robot.model, robot.data, robot.q0)
+configuration = Configuration(robot.model, robot.data, robot.q0)
 
 T_pred = 100e-3  # (s) Sampling time for prediction horizon
 T_control = 100e-3  # (s) Sampling time for control ideal is 5e-3
@@ -441,3 +442,5 @@ if __name__ == "__main__":
         raise ValueError("Please provide a valid trajectory type : forward, upwards, upwards_turning")
 
     main(args.trajectory_type, args.debug, args.store, args.filename)
+
+
