@@ -1,13 +1,23 @@
 ## Stable Walking for humanoid robot
+This project implements a stable walking controller for a humanoid robot using **Model Predictive Control (MPC)** for trajectory planning and **Inverse Kinematics (IK)** for joint control. 
 
-This project provides an implementation of an MPC for bipedal robot walking. The controller allows the robot to maintain its balance while walking at different speeds. The controller also features robustness against disturbances and the ability to react to changes in the environment.
+## Model Predictive Control (MPC)
+The controller allows the robot to maintain its balance while walking at different speeds. The controller also features robustness against disturbances and the ability to react to changes in the environment.
 The key steps in the MPC approach are:
 
 1. **Prediction:** Based on the current state of the robot and the control inputs, the MPC predicts the future states of the robot using the system model.
 2. **Optimization:** The MPC formulates an optimization problem to minimize the difference between the predicted state and the desired state. The optimization problem includes minimization of the jerk, velocity and proximity to reference trajectories.
 3. **Implementation:** The MPC applies the optimal control actions to the robot.
 
-After the MPC is used to generate the stable walking trajectory, we use inverse kinematics via the `pink` library to control the joints of the robot and simulate walking.
+## Inverse Kinematics (IK)
+
+Once the walking trajectory is generated, **Inverse Kinematics** is used to control the robot's joints via the **Pink** library. IK calculates the joint angles required to achieve specific target positions while considering constraints such as joint limits and smooth transitions.
+
+The key steps in Inverse Kinematics (IK) are:
+
+1. Taking the output of the controller (the succession of steps that the robot should follow).
+2. Creating smooth foot trajectories between steps using Bézier curves.
+3. Solving Quadratic Programming (QP) problems to follow the trajectory while maintaining balance and respecting joint constraints.
 
 ## Requirements
 
