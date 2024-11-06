@@ -1,5 +1,9 @@
+
+
 ## Stable Walking for humanoid robot
-This project implements a stable walking controller for a humanoid robot using **Model Predictive Control (MPC)** for trajectory planning and **Inverse Kinematics (IK)** for joint control. 
+This project implements a stable walking controller for a humanoid robot by employing **Model Predictive Control (MPC)** for trajectory planning and Inverse Kinematics (IK) for joint control. 
+
+Developed as part of the INEXACT Project under the supervision of **P.B. Wieber** and **Adrien Escande** [@aescande] (https://www.github.com/aescande) at Inria Grenoble, the tool aims to assess the efficiency of numerical solvers in robotics control applications.
 
 ## Model Predictive Control (MPC)
 The controller allows the robot to maintain its balance while walking at different speeds. The controller also features robustness against disturbances and the ability to react to changes in the environment.
